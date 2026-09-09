@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+.env
+.env.local
+*.md
+ebook.txt
+Sinyal Qualified Leads Ebook.pdf

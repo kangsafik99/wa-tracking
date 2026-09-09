@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadStatus {
+  NEW_LEAD
+  CONTACT
+  FOLLOW_UP
+  QUALIFIED_LEAD
+  BOOKING
+  PURCHASE
+  CLOSED_LOST
+}
+
+enum LeadSource {
+  LPWA // landing page -> WhatsApp (voucher bridge)
+  CTWA // click-to-WhatsApp (Meta ad referral)
+  GOOGLE_MAPS
+  ORGANIC // captured with no attribution at all (orphan)
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+}
+
+model Lead {
+  id          String     @id @default(cuid())
+  voucherCode String?    @unique
+  name        String?
+  phone       String?
+  email       String?
+  totalValue  Decimal?   @db.Decimal(14, 2)
+  status      LeadStatus @default(NEW_LEAD)
+  source      LeadSource @default(LPWA)
+  branch      String?
+
+  // click IDs / attribution
+  gclid      String?
+  ttclid     String?
+  fbclid     String?
+  ctwaClid   String?
+  externalId String?
+  utmSource  String?
+  utmMedium  String?
+  utmCampaign String?
+  fbc        String?
+  fbp        String?
+
+  eventTime DateTime?
+  notes     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phone])
+  @@index([status])
+  @@index([createdAt])
+  @@index([utmSource])
+}
+
+model WebhookLog {
+  id        String   @id @default(cuid())
+  source    String // "gowa"
+  event     String? // "message", etc
+  result    String? // short human-readable outcome, e.g. "linked:BT-XXXX"
+  raw       Json
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
