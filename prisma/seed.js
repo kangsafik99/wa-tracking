@@ -1,5 +1,8 @@
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+// Plain JS (bukan .ts) sengaja — dijalankan langsung dengan `node` di container
+// production yang tidak punya tsx/TypeScript, cuma @prisma/client & bcryptjs
+// (dua-duanya sudah pasti ada karena ke-trace oleh Next.js standalone output).
+const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcryptjs");
 
 const prisma = new PrismaClient();
 
