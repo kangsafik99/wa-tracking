@@ -1,13 +1,14 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { MagnifyingGlass, CaretLeft, CaretRight, UsersThree } from "@phosphor-icons/react/ssr";
 import { prisma } from "@/lib/prisma";
 import { STATUS_LABEL } from "@/lib/leads";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatTimeWIB, dateGroupKey, formatDateGroupLabel } from "@/lib/format";
 import { parseTrafficFilter, leadTrafficWhere } from "@/lib/traffic";
 import { StatusSelect } from "@/components/StatusSelect";
 import { TrafficToggle } from "@/components/TrafficToggle";
 import { Button, buttonVariants } from "@/components/ui/Button";
-import type { LeadStatus, Prisma } from "@prisma/client";
+import type { Lead, LeadStatus, Prisma } from "@prisma/client";
 
 const PAGE_SIZE = 25;
 
@@ -54,6 +55,17 @@ export default async function LeadsPage({
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const groups: { key: string; label: string; items: Lead[] }[] = [];
+  for (const lead of leads) {
+    const key = dateGroupKey(lead.createdAt);
+    const lastGroup = groups[groups.length - 1];
+    if (lastGroup && lastGroup.key === key) {
+      lastGroup.items.push(lead);
+    } else {
+      groups.push({ key, label: formatDateGroupLabel(lead.createdAt), items: [lead] });
+    }
+  }
 
   function pageHref(overrides: Record<string, string | undefined>) {
     const params = new URLSearchParams();
@@ -111,7 +123,7 @@ export default async function LeadsPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-left">
-              <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Waktu</th>
+              <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Jam</th>
               <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Voucher</th>
               <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Nama</th>
               <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">No HP</th>
@@ -122,25 +134,41 @@ export default async function LeadsPage({
             </tr>
           </thead>
           <tbody>
-            {leads.map((lead) => (
-              <tr key={lead.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition">
-                <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatDate(lead.createdAt)}</td>
-                <td className="px-4 py-3 font-mono text-xs text-slate-700">{lead.voucherCode || "—"}</td>
-                <td className="px-4 py-3 text-slate-900 font-medium">{lead.name || "—"}</td>
-                <td className="px-4 py-3 text-slate-700 whitespace-nowrap font-mono text-xs">{lead.phone || "—"}</td>
-                <td className="px-4 py-3 text-slate-500">{lead.utmSource || "—"}</td>
-                <td className="px-4 py-3 text-slate-700 whitespace-nowrap font-mono text-xs">
-                  {lead.totalValue ? formatCurrency(Number(lead.totalValue)) : "—"}
-                </td>
-                <td className="px-4 py-3">
-                  <StatusSelect leadId={lead.id} status={lead.status} />
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <Link href={`/leads/${lead.id}`} className="text-brand-700 hover:text-brand-800 hover:underline text-xs font-medium">
-                    Detail
-                  </Link>
-                </td>
-              </tr>
+            {groups.map((group) => (
+              <Fragment key={group.key}>
+                <tr className="bg-slate-50">
+                  <td colSpan={8} className="px-4 py-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      {group.label}
+                    </span>
+                    <span className="ml-2 text-xs text-slate-400">
+                      {group.items.length} lead
+                    </span>
+                  </td>
+                </tr>
+                {group.items.map((lead) => (
+                  <tr key={lead.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition">
+                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap font-mono text-xs">
+                      {formatTimeWIB(lead.createdAt)}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-700">{lead.voucherCode || "—"}</td>
+                    <td className="px-4 py-3 text-slate-900 font-medium">{lead.name || "—"}</td>
+                    <td className="px-4 py-3 text-slate-700 whitespace-nowrap font-mono text-xs">{lead.phone || "—"}</td>
+                    <td className="px-4 py-3 text-slate-500">{lead.utmSource || "—"}</td>
+                    <td className="px-4 py-3 text-slate-700 whitespace-nowrap font-mono text-xs">
+                      {lead.totalValue ? formatCurrency(Number(lead.totalValue)) : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusSelect leadId={lead.id} status={lead.status} />
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link href={`/leads/${lead.id}`} className="text-brand-700 hover:text-brand-800 hover:underline text-xs font-medium">
+                        Detail
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </Fragment>
             ))}
             {leads.length === 0 && (
               <tr>
