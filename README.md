@@ -192,9 +192,18 @@ iklan belajar dari pelanggan sungguhan, bukan cuma klik.
 **Konsep "Destination"**: karena click ID bersifat *account-scoped* (Ebook 1.2 — gclid/fbclid/ttclid
 dari satu Ad Account tidak dikenali akun lain), tiap Ad Account/brand butuh kredensial ekspor sendiri.
 Destination dikelola dari dashboard (bukan env var) supaya bisa tambah/edit akun kapan saja tanpa
-redeploy. Tiap destination dipetakan ke satu/lebih **prefix voucher** (mis. `BT-` → Akun A, `RB-` →
-Akun B); satu destination bisa ditandai **default** sebagai fallback untuk lead tanpa voucher (CTWA,
-orphan capture).
+redeploy. Dua cara sebuah lead di-route ke destination yang tepat:
+
+- **Prefix voucher** (mis. `BT-` → Akun A, `RB-` → Akun B) — jalur normal LPWA/TikTok/Google, karena
+  semuanya selalu lewat landing page dan selalu punya voucher.
+- **Nomor WhatsApp penerima chat** (`waNumbers`) — khusus untuk lead **CTWA**, yang klik langsung ke
+  WhatsApp tanpa lewat landing page sama sekali, jadi **tidak pernah punya voucher/prefix**. Satu-satunya
+  sinyal untuk membedakan brand/akun di sini adalah nomor WA mana yang menerima chat-nya (iklan CTWA
+  brand A pasti diarahkan ke nomor WA brand A). Nomor ini otomatis tertangkap dari `device_id` payload
+  webhook Gowa (`src/lib/gowa.ts`, kolom `Lead.waDeviceId`).
+
+Satu destination bisa ditandai **default** sebagai fallback terakhir kalau tidak ada prefix voucher
+maupun nomor WA yang cocok.
 
 | Platform | Cara kerja | Kredensial yang dibutuhkan |
 |---|---|---|

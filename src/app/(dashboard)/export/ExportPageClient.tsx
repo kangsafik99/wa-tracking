@@ -116,7 +116,13 @@ export function ExportPageClient({ destinations }: { destinations: SafeExportDes
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-900 truncate">{d.name}</p>
                   <p className="text-xs text-slate-400 font-mono truncate">
-                    {d.isDefault ? "default (fallback)" : d.voucherPrefixes.join(", ") || "-"}
+                    {[
+                      d.voucherPrefixes.length > 0 ? d.voucherPrefixes.join(", ") : null,
+                      d.waNumbers.length > 0 ? `WA: ${d.waNumbers.join(", ")}` : null,
+                      d.isDefault ? "default (fallback)" : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || "-"}
                   </p>
                 </div>
                 {!d.active && <Badge tone="slate">Nonaktif</Badge>}

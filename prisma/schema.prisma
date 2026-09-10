@@ -55,6 +55,12 @@ model Lead {
   fbc        String?
   fbp        String?
 
+  // Nomor WA (device_id Gowa, dinormalisasi) yang menerima chat ini. Untuk lead
+  // tanpa voucher (CTWA/orphan) ini satu-satunya sinyal untuk membedakan
+  // akun/brand mana, karena CTWA tidak lewat landing page jadi tidak pernah
+  // dapat prefix voucher (lihat ExportDestination.waNumbers).
+  waDeviceId String?
+
   eventTime DateTime?
   notes     String?
 
@@ -65,6 +71,7 @@ model Lead {
   @@index([status])
   @@index([createdAt])
   @@index([utmSource])
+  @@index([waDeviceId])
 }
 
 model WebhookLog {
@@ -95,10 +102,13 @@ model ExportDestination {
   active   Boolean        @default(true)
 
   // Lead di-route ke sini kalau voucherCode-nya diawali salah satu prefix ini.
-  // isDefault = fallback untuk lead yang tidak cocok prefix manapun di platform
-  // ini (mis. CTWA/orphan tanpa voucher).
   voucherPrefixes String[]
-  isDefault       Boolean  @default(false)
+  // Lead TANPA voucher (CTWA/orphan) di-route ke sini kalau waDeviceId-nya
+  // (nomor WA penerima chat) cocok salah satu nomor ini - inilah cara
+  // membedakan akun untuk CTWA, karena CTWA tidak pernah punya voucher/prefix.
+  waNumbers String[]
+  // Fallback terakhir kalau tidak ada voucherPrefixes maupun waNumbers yang cocok.
+  isDefault Boolean @default(false)
 
   // Meta CAPI
   metaDatasetId     String?

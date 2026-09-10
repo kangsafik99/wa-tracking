@@ -23,6 +23,7 @@ export async function processIncomingMessage(m: IncomingMessage): Promise<string
           phone,
           status: "CONTACT",
           ctwaClid: lead.ctwaClid || m.ctwaClid || undefined,
+          waDeviceId: m.waDeviceId || undefined,
         },
       });
       return `linked to Contact: ${voucher}`;
@@ -44,6 +45,7 @@ export async function processIncomingMessage(m: IncomingMessage): Promise<string
         status: "CONTACT",
         source: "CTWA",
         ctwaClid: m.ctwaClid,
+        waDeviceId: m.waDeviceId,
         utmSource: "Meta",
         utmMedium: "CTWA",
         eventTime: new Date(),
@@ -60,6 +62,7 @@ export async function processIncomingMessage(m: IncomingMessage): Promise<string
       phone,
       status: "CONTACT",
       source: "ORGANIC",
+      waDeviceId: m.waDeviceId,
       utmSource: "WhatsApp",
       utmMedium: "Organic",
       eventTime: new Date(),
