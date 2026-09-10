@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseGowaMessage, verifyGowaSignature } from "@/lib/gowa";
 import { processIncomingMessage } from "@/lib/process-incoming";
+import { maybeCleanupWebhookLogs } from "@/lib/webhook-log-cleanup";
 
 export async function GET() {
   return NextResponse.json({
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
     await prisma.webhookLog.create({
       data: { source: "gowa", event: "unparseable", raw: { raw: rawBody.slice(0, 20000) } },
     });
+    void maybeCleanupWebhookLogs();
     return NextResponse.json({ status: "error", error: "invalid JSON" }, { status: 400 });
   }
 
@@ -48,6 +50,7 @@ export async function POST(req: NextRequest) {
       raw: body as object,
     },
   });
+  void maybeCleanupWebhookLogs();
 
   return NextResponse.json({ status: "done", result });
 }

@@ -86,6 +86,10 @@ Lihat `.env.example` untuk daftar lengkap + penjelasan. Yang **wajib** diisi:
 4. Dukungan **CTWA** (Click-to-WhatsApp Meta) otomatis aktif: kalau pesan pertama membawa
    `referral.ctwa_clid` dari Gowa, sistem langsung membuat lead status "Contact" dengan `ctwaClid`
    tersimpan — tanpa perlu voucher (lihat `src/lib/process-incoming.ts`).
+5. **Webhook Log otomatis dibersihkan** setelah `WEBHOOK_LOG_RETENTION_DAYS` hari (default 30) —
+   tabel ini cuma untuk debug jangka pendek, bukan sumber laporan (lihat
+   `src/lib/webhook-log-cleanup.ts`). Tidak perlu cron job terpisah; pembersihan menempel oportunistik
+   di setiap request webhook masuk.
 
 ## Menghubungkan Landing Page
 
