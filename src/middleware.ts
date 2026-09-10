@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { SESSION_COOKIE_NAME } from "@/lib/auth";
 
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/test-lp"];
 const PUBLIC_API_PREFIXES = ["/api/webhook", "/api/leads", "/api/health"];
 
 export async function middleware(req: NextRequest) {
