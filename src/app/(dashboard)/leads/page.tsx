@@ -3,7 +3,9 @@ import { MagnifyingGlass, CaretLeft, CaretRight, UsersThree } from "@phosphor-ic
 import { prisma } from "@/lib/prisma";
 import { STATUS_LABEL } from "@/lib/leads";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { parseTrafficFilter, leadTrafficWhere } from "@/lib/traffic";
 import { StatusSelect } from "@/components/StatusSelect";
+import { TrafficToggle } from "@/components/TrafficToggle";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import type { LeadStatus, Prisma } from "@prisma/client";
 
@@ -22,14 +24,15 @@ const STATUS_OPTIONS: LeadStatus[] = [
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; page?: string; traffic?: string }>;
 }) {
   const sp = await searchParams;
   const status = sp.status as LeadStatus | undefined;
   const q = sp.q?.trim();
   const page = Math.max(1, Number(sp.page) || 1);
+  const traffic = parseTrafficFilter(sp.traffic);
 
-  const where: Prisma.LeadWhereInput = {};
+  const where: Prisma.LeadWhereInput = { ...leadTrafficWhere(traffic) };
   if (status) where.status = status;
   if (q) {
     where.OR = [
@@ -54,19 +57,23 @@ export default async function LeadsPage({
 
   function pageHref(overrides: Record<string, string | undefined>) {
     const params = new URLSearchParams();
-    const merged = { status: sp.status, q: sp.q, page: sp.page, ...overrides };
+    const merged = { status: sp.status, q: sp.q, page: sp.page, traffic: sp.traffic, ...overrides };
     for (const [k, v] of Object.entries(merged)) if (v) params.set(k, v);
     return `/leads?${params.toString()}`;
   }
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-semibold text-slate-900">Leads</h2>
-        <p className="text-sm text-slate-500">{total.toLocaleString("id-ID")} lead ditemukan.</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">Leads</h2>
+          <p className="text-sm text-slate-500">{total.toLocaleString("id-ID")} lead ditemukan.</p>
+        </div>
+        <TrafficToggle current={traffic} buildHref={(v) => pageHref({ traffic: v === "all" ? undefined : v, page: undefined })} />
       </div>
 
       <form className="flex flex-wrap gap-3 items-end" action="/leads" method="GET">
+        <input type="hidden" name="traffic" value={traffic} />
         <div>
           <label className="block text-xs font-medium text-slate-500 mb-1.5">Cari</label>
           <div className="relative">

@@ -2,8 +2,10 @@ import { Users, ChatCircleDots, CheckCircle, CurrencyCircleDollar } from "@phosp
 import { prisma } from "@/lib/prisma";
 import { STATUS_LABEL, STATUS_RANK } from "@/lib/leads";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { parseTrafficFilter, leadTrafficWhere } from "@/lib/traffic";
 import { FunnelChart } from "@/components/FunnelChart";
 import { Card } from "@/components/ui/Card";
+import { TrafficToggle } from "@/components/TrafficToggle";
 import type { LeadStatus } from "@prisma/client";
 
 function StatCard({
@@ -31,21 +33,30 @@ function StatCard({
   );
 }
 
-export default async function OverviewPage() {
+export default async function OverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ traffic?: string }>;
+}) {
+  const sp = await searchParams;
+  const traffic = parseTrafficFilter(sp.traffic);
+  const where = leadTrafficWhere(traffic);
+
   const [statusGroups, purchaseAgg, sourceGroups, totalLeads] = await Promise.all([
-    prisma.lead.groupBy({ by: ["status"], _count: { _all: true } }),
+    prisma.lead.groupBy({ where, by: ["status"], _count: { _all: true } }),
     prisma.lead.aggregate({
-      where: { status: "PURCHASE" },
+      where: { ...where, status: "PURCHASE" },
       _sum: { totalValue: true },
       _count: { _all: true },
     }),
     prisma.lead.groupBy({
+      where,
       by: ["utmSource"],
       _count: { _all: true },
       orderBy: { _count: { utmSource: "desc" } },
       take: 8,
     }),
-    prisma.lead.count(),
+    prisma.lead.count({ where }),
   ]);
 
   const countByStatus = new Map<LeadStatus, number>();
@@ -70,9 +81,12 @@ export default async function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-slate-900">Overview</h2>
-        <p className="text-sm text-slate-500">Ringkasan funnel lead WhatsApp Anda.</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">Overview</h2>
+          <p className="text-sm text-slate-500">Ringkasan funnel lead WhatsApp Anda.</p>
+        </div>
+        <TrafficToggle current={traffic} buildHref={(v) => `/?traffic=${v}`} />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
