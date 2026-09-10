@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { runExportForPlatform, type ExportRunResult } from "@/lib/export/run";
+import { runExportForPlatform, runGoogleExport, type ExportRunResult } from "@/lib/export/run";
 import { normalizePhone } from "@/lib/leads";
 import type { ExportPlatform } from "@prisma/client";
 
@@ -27,7 +27,12 @@ export type DestinationInput = {
   tiktokPixelCode?: string;
   tiktokAccessToken?: string; // kosong saat edit = jangan ubah
   tiktokTestEventCode?: string;
-  googleConversionNames?: Record<string, string>;
+  googleClientId?: string;
+  googleClientSecret?: string; // kosong saat edit = jangan ubah
+  googleDeveloperToken?: string; // kosong saat edit = jangan ubah
+  googleCustomerId?: string;
+  googleLoginCustomerId?: string;
+  googleConversionActions?: Record<string, string>;
 };
 
 function parsePrefixes(raw: string): string[] {
@@ -64,7 +69,11 @@ export async function saveDestinationAction(input: DestinationInput): Promise<{ 
     metaTestEventCode: input.platform === "META" ? input.metaTestEventCode?.trim() || null : null,
     tiktokPixelCode: input.platform === "TIKTOK" ? input.tiktokPixelCode?.trim() || null : null,
     tiktokTestEventCode: input.platform === "TIKTOK" ? input.tiktokTestEventCode?.trim() || null : null,
-    googleConversionNames: input.platform === "GOOGLE_CSV" ? input.googleConversionNames || {} : undefined,
+    googleClientId: input.platform === "GOOGLE" ? input.googleClientId?.trim() || null : null,
+    googleCustomerId: input.platform === "GOOGLE" ? input.googleCustomerId?.replace(/\D/g, "") || null : null,
+    googleLoginCustomerId:
+      input.platform === "GOOGLE" ? input.googleLoginCustomerId?.replace(/\D/g, "") || null : null,
+    googleConversionActions: input.platform === "GOOGLE" ? input.googleConversionActions || {} : undefined,
   };
 
   if (input.id) {
@@ -76,13 +85,17 @@ export async function saveDestinationAction(input: DestinationInput): Promise<{ 
       data: {
         ...baseData,
         metaAccessToken:
-          input.platform === "META"
-            ? input.metaAccessToken?.trim() || existing.metaAccessToken
-            : null,
+          input.platform === "META" ? input.metaAccessToken?.trim() || existing.metaAccessToken : null,
         tiktokAccessToken:
-          input.platform === "TIKTOK"
-            ? input.tiktokAccessToken?.trim() || existing.tiktokAccessToken
-            : null,
+          input.platform === "TIKTOK" ? input.tiktokAccessToken?.trim() || existing.tiktokAccessToken : null,
+        googleClientSecret:
+          input.platform === "GOOGLE" ? input.googleClientSecret?.trim() || existing.googleClientSecret : null,
+        googleDeveloperToken:
+          input.platform === "GOOGLE" ? input.googleDeveloperToken?.trim() || existing.googleDeveloperToken : null,
+        // refresh token CUMA diisi lewat alur OAuth callback, tidak pernah dari form ini.
+        // Kalau ganti Client ID/Secret, token lama kemungkinan tidak valid lagi -
+        // admin perlu klik "Connect Google Ads" ulang.
+        googleRefreshToken: input.platform === "GOOGLE" ? existing.googleRefreshToken : null,
       },
     });
   } else {
@@ -91,6 +104,8 @@ export async function saveDestinationAction(input: DestinationInput): Promise<{ 
         ...baseData,
         metaAccessToken: input.platform === "META" ? input.metaAccessToken?.trim() || null : null,
         tiktokAccessToken: input.platform === "TIKTOK" ? input.tiktokAccessToken?.trim() || null : null,
+        googleClientSecret: input.platform === "GOOGLE" ? input.googleClientSecret?.trim() || null : null,
+        googleDeveloperToken: input.platform === "GOOGLE" ? input.googleDeveloperToken?.trim() || null : null,
       },
     });
   }
@@ -114,11 +129,11 @@ export async function toggleDestinationActiveAction(id: string, active: boolean)
 }
 
 export async function runExportNowAction(
-  platform: "META" | "TIKTOK"
+  platform: "META" | "TIKTOK" | "GOOGLE"
 ): Promise<ExportRunResult & { error?: string }> {
   await requireAuth();
   try {
-    const result = await runExportForPlatform(platform);
+    const result = platform === "GOOGLE" ? await runGoogleExport() : await runExportForPlatform(platform);
     revalidatePath("/export");
     return result;
   } catch (err) {

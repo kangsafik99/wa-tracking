@@ -24,12 +24,8 @@ export const TIKTOK_EVENT_MAP: Partial<Record<LeadStatus, string>> = {
   PURCHASE: "Purchase",
 };
 
-// Default nama Conversion Action Google - admin bisa timpa per destination
-// lewat googleConversionNames (harus persis sama dengan yang dibuat di Google
-// Ads UI, Ebook 5.2).
-export const GOOGLE_DEFAULT_CONVERSION_NAMES: Partial<Record<LeadStatus, string>> = {
-  CONTACT: "Contact",
-  QUALIFIED_LEAD: "Qualified Lead",
-  BOOKING: "Booking",
-  PURCHASE: "Purchase",
-};
+// Status yang butuh Conversion Action resource name Google per destination
+// (googleConversionActions) - tidak ada default masuk akal karena resource
+// name spesifik per akun Google Ads (Ebook 5.2), admin wajib isi sendiri
+// setelah membuat Conversion Action-nya di Google Ads UI.
+export const GOOGLE_CONVERSION_ACTION_STATUSES: LeadStatus[] = EXPORTABLE_STATUSES;

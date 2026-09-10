@@ -212,34 +212,53 @@ maupun nomor WA yang cocok.
 
 | Platform | Cara kerja | Kredensial yang dibutuhkan |
 |---|---|---|
-| **Meta CAPI** | Push otomatis (server-side POST), `src/lib/export/meta.ts` | Dataset ID + Access Token dari Events Manager |
-| **TikTok Events API** | Push otomatis, `src/lib/export/tiktok.ts` | Pixel Code + Access Token dari TikTok Ads Manager |
-| **Google Ads** | **CSV export manual/terjadwal**, bukan push API — lihat catatan di bawah | Tidak perlu kredensial API |
+| **Meta CAPI** | Push otomatis per-event, `src/lib/export/meta.ts` | Dataset ID + Access Token dari Events Manager |
+| **TikTok Events API** | Push otomatis per-event, `src/lib/export/tiktok.ts` | Pixel Code + Access Token dari TikTok Ads Manager |
+| **Google Ads API** | Push otomatis, **batch upload** (`src/lib/export/google-ads.ts`, `ConversionUploadService.uploadClickConversions`) | OAuth Client ID/Secret + Developer Token + Customer ID (lihat di bawah) |
 
 Langkah pakai:
 
 1. Login ke dashboard → menu **Export** → **Tambah Destination** → pilih platform, isi kredensial,
    isi prefix voucher (atau tandai sebagai default).
-2. Meta & TikTok terkirim **otomatis tiap `EXPORT_INTERVAL_MINUTES` menit** di background
+2. Ketiga platform terkirim **otomatis tiap `EXPORT_INTERVAL_MINUTES` menit** di background
    (`src/instrumentation.ts` — proses interval di dalam container, tidak perlu cron job EasyPanel).
    Tombol **"Kirim Sekarang"** di halaman Export untuk memicu manual/testing.
 3. Setiap event dikirim sekali per (destination, lead, nama event) — dedup lewat tabel `ExportLog`,
-   jadi aman dijalankan berkali-kali tanpa dobel kirim.
+   jadi aman dijalankan berkali-kali tanpa dobel kirim. Google beda pola: satu destination = satu
+   request batch berisi semua lead yang pending (bukan satu-satu seperti Meta/TikTok), sesuai desain asli
+   `uploadClickConversions`.
 4. No HP & `external_id` di-hash SHA-256 sebelum dikirim (`src/lib/hash.ts`), sesuai Aturan Emas privasi
-   Ebook 1.6. Click ID (`ctwa_clid`, `fbc`, `fbp`, `ttclid`) dikirim apa adanya.
+   Ebook 1.6. Click ID (`ctwa_clid`, `fbc`, `fbp`, `ttclid`, `gclid`) dikirim apa adanya.
 
-**Kenapa Google beda (CSV, bukan API)**: mengirim konversi otomatis ke Google Ads butuh Google Ads API,
-yang mensyaratkan OAuth (Client ID/Secret) + **Developer Token** yang harus diajukan & disetujui Google
-— prosesnya bisa berhari-hari dan cukup teknis. Untuk v1, destination Google cukup men-generate file
-CSV (kolom Google Click ID/Conversion Name/Time/Value/Currency, format persis seperti yang diminta
-Google Ads Uploads — Ebook 5.2) yang Anda unggah manual/terjadwal sendiri di Google Ads UI
-(**Tools & Settings → Conversions → Uploads**). Kalau nanti berhasil dapat Developer Token, integrasi
-API penuh bisa dibangun menyusul di atas struktur Destination yang sama.
+### Setup Google Ads API
+
+Ini yang paling banyak langkah, karena Google mensyaratkan OAuth + Developer Token (bukan cuma
+Access Token statis seperti Meta/TikTok):
+
+1. **Google Cloud Console** → buat/pakai project → aktifkan **Google Ads API** → buat kredensial
+   **OAuth Client ID** (tipe "Web application"). Simpan Client ID & Client Secret-nya.
+2. **Google Ads** (akun yang mau dipakai kirim konversi) → **Tools & Settings → API Center** → generate
+   **Developer Token**. Token baru levelnya "Test" (cuma jalan ke akun test); untuk akun asli ajukan
+   **Basic access** ke Google (form di API Center, biasanya diproses beberapa hari).
+3. **Google Ads** → **Tools & Settings → Conversions** → buat Conversion Action baru (Import → Other
+   data sources/CRM → Track conversions from clicks) untuk tiap status yang mau dilaporkan (Contact,
+   Qualified Lead, Booking, Purchase). Salin **resource name**-nya (`customers/.../conversionActions/...`,
+   kelihatan di URL atau API response saat membuatnya).
+4. Di dashboard → **Export** → **Tambah Destination** → platform **Google Ads API** → isi Client ID,
+   Client Secret, Developer Token, Customer ID (akun Ads tujuan, 10 digit tanpa strip), Login Customer ID
+   (isi kalau akun tersebut dikelola lewat akun manager/MCC), dan resource name Conversion Action per
+   status → **Simpan**.
+5. Daftarkan **redirect URI** yang ditampilkan di form (`https://domain-anda/api/oauth/google/callback`)
+   ke OAuth Client di Google Cloud Console (Authorized redirect URIs).
+6. Klik **"Connect Google Ads"** di destination yang baru disimpan → login & izinkan lewat halaman
+   consent Google resmi (`src/app/api/oauth/google/start`) → otomatis kembali ke dashboard dengan status
+   "Terhubung". Refresh token yang didapat **tidak pernah** melewati form/browser lagi setelah itu -
+   tersimpan di database, dipakai otomatis oleh `src/lib/export/google-oauth.ts` tiap kali perlu access
+   token baru.
 
 ## Yang BELUM termasuk di v1 ini
 
 - **Sinkronisasi Order/POS otomatis** (Bonus 02) — untuk sekarang, update status ke Booking/Purchase +
   nilai transaksi dilakukan manual lewat halaman **Leads → Detail** di dashboard.
-- **Google Ads API penuh** (lihat catatan di atas) — CSV export manual sudah tersedia sebagai gantinya.
 
 Kabari saja kalau mau dibangun.

@@ -88,7 +88,7 @@ model WebhookLog {
 enum ExportPlatform {
   META
   TIKTOK
-  GOOGLE_CSV
+  GOOGLE
 }
 
 // Tujuan pengiriman konversi server-side (Ebook SINYAL Bagian 5). Dikelola dari
@@ -120,9 +120,20 @@ model ExportDestination {
   tiktokAccessToken  String?
   tiktokTestEventCode String?
 
-  // Google CSV: nama Conversion Action per status, harus persis sama dengan
-  // yang dibuat di Google Ads UI (Ebook 5.2). Contoh: {"CONTACT":"Contact"}
-  googleConversionNames Json?
+  // Google Ads API (OAuth) - Client ID/Secret dari Google Cloud Console (satu
+  // project OAuth bisa dipakai untuk banyak destination). Developer Token dari
+  // Google Ads API Center. refreshToken didapat otomatis lewat alur "Connect
+  // Google Ads" (src/app/api/oauth/google), bukan diisi manual.
+  googleClientId         String?
+  googleClientSecret     String?
+  googleDeveloperToken   String?
+  googleRefreshToken     String?
+  googleCustomerId       String? // ID akun Google Ads tujuan (10 digit, tanpa strip)
+  googleLoginCustomerId  String? // ID akun manager/MCC, opsional (kalau customerId dikelola lewat MCC)
+  // Resource name Conversion Action per status, mis.
+  // {"CONTACT": "customers/1234567890/conversionActions/987654321"}.
+  // Conversion Action-nya harus sudah dibuat duluan di Google Ads UI (Ebook 5.2).
+  googleConversionActions Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

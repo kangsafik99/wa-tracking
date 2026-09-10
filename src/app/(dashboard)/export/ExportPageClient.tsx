@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Plus,
   PencilSimple,
   Trash,
   CircleNotch,
   PaperPlaneTilt,
-  DownloadSimple,
+  CheckCircle,
+  WarningCircle,
+  X,
 } from "@phosphor-icons/react/ssr";
 import type { SafeExportDestination } from "@/lib/export/types";
 import { Card, CardTitle } from "@/components/ui/Card";
@@ -23,14 +26,39 @@ import {
 const PLATFORM_LABEL: Record<string, string> = {
   META: "Meta CAPI",
   TIKTOK: "TikTok Events API",
-  GOOGLE_CSV: "Google (CSV)",
+  GOOGLE: "Google Ads API",
 };
 
 const PLATFORM_TONE: Record<string, "blue" | "purple" | "indigo"> = {
   META: "blue",
   TIKTOK: "purple",
-  GOOGLE_CSV: "indigo",
+  GOOGLE: "indigo",
 };
+
+function OAuthBanner() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const connected = searchParams.get("google_connected");
+  const error = searchParams.get("google_error");
+
+  if (!connected && !error) return null;
+
+  return (
+    <div
+      className={`flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm ${
+        connected ? "bg-brand-50 text-brand-800" : "bg-red-50 text-red-700"
+      }`}
+    >
+      <span className="inline-flex items-center gap-2">
+        {connected ? <CheckCircle size={16} weight="fill" /> : <WarningCircle size={16} weight="fill" />}
+        {connected ? `Berhasil terhubung ke Google Ads (${connected}).` : `Gagal connect Google Ads: ${error}`}
+      </span>
+      <button onClick={() => router.replace("/export")} className="text-current opacity-60 hover:opacity-100">
+        <X size={15} />
+      </button>
+    </div>
+  );
+}
 
 export function ExportPageClient({ destinations }: { destinations: SafeExportDestination[] }) {
   const [formState, setFormState] = useState<{ open: boolean; editing: SafeExportDestination | null }>({
@@ -42,11 +70,6 @@ export function ExportPageClient({ destinations }: { destinations: SafeExportDes
 
   const [runResult, setRunResult] = useState<Record<string, string>>({});
   const [running, setRunning] = useState<string | null>(null);
-  const [csvRange, setCsvRange] = useState<{ from: string; to: string }>(() => {
-    const to = new Date();
-    const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) };
-  });
 
   function handleToggle(id: string, active: boolean) {
     setPendingId(id);
@@ -65,7 +88,7 @@ export function ExportPageClient({ destinations }: { destinations: SafeExportDes
     });
   }
 
-  function handleRunNow(platform: "META" | "TIKTOK") {
+  function handleRunNow(platform: "META" | "TIKTOK" | "GOOGLE") {
     setRunning(platform);
     startTransition(async () => {
       const res = await runExportNowAction(platform);
@@ -81,10 +104,12 @@ export function ExportPageClient({ destinations }: { destinations: SafeExportDes
 
   const metaDestinations = destinations.filter((d) => d.platform === "META" && d.active);
   const tiktokDestinations = destinations.filter((d) => d.platform === "TIKTOK" && d.active);
-  const googleDestinations = destinations.filter((d) => d.platform === "GOOGLE_CSV");
+  const googleDestinations = destinations.filter((d) => d.platform === "GOOGLE" && d.active);
 
   return (
     <div className="space-y-6">
+      <OAuthBanner />
+
       <Card>
         <div className="flex items-center justify-between mb-4">
           <CardTitle>Destinations</CardTitle>
@@ -126,6 +151,11 @@ export function ExportPageClient({ destinations }: { destinations: SafeExportDes
                   </p>
                 </div>
                 {!d.active && <Badge tone="slate">Nonaktif</Badge>}
+                {d.platform === "GOOGLE" && (
+                  <Badge tone={d.googleConnected ? "brand" : "amber"}>
+                    {d.googleConnected ? "Terhubung" : "Belum terhubung"}
+                  </Badge>
+                )}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
@@ -165,83 +195,38 @@ export function ExportPageClient({ destinations }: { destinations: SafeExportDes
           Normalnya berjalan otomatis tiap beberapa menit di background. Tombol ini untuk memicu manual
           (mis. buat testing).
         </p>
-        <div className="flex flex-wrap gap-3">
-          <div>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={running === "META" || metaDestinations.length === 0}
-              onClick={() => handleRunNow("META")}
-            >
-              {running === "META" ? <CircleNotch size={14} className="animate-spin" /> : <PaperPlaneTilt size={14} />}
-              Kirim ke Meta
-            </Button>
-            {runResult.META && <p className="text-xs text-slate-500 mt-1.5">{runResult.META}</p>}
-            {metaDestinations.length === 0 && (
-              <p className="text-xs text-slate-400 mt-1.5">Belum ada destination Meta yang aktif.</p>
-            )}
-          </div>
-          <div>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={running === "TIKTOK" || tiktokDestinations.length === 0}
-              onClick={() => handleRunNow("TIKTOK")}
-            >
-              {running === "TIKTOK" ? (
-                <CircleNotch size={14} className="animate-spin" />
-              ) : (
-                <PaperPlaneTilt size={14} />
+        <div className="flex flex-wrap gap-4">
+          {(
+            [
+              { platform: "META" as const, label: "Kirim ke Meta", available: metaDestinations.length > 0 },
+              { platform: "TIKTOK" as const, label: "Kirim ke TikTok", available: tiktokDestinations.length > 0 },
+              { platform: "GOOGLE" as const, label: "Kirim ke Google", available: googleDestinations.length > 0 },
+            ]
+          ).map((row) => (
+            <div key={row.platform}>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={running === row.platform || !row.available}
+                onClick={() => handleRunNow(row.platform)}
+              >
+                {running === row.platform ? (
+                  <CircleNotch size={14} className="animate-spin" />
+                ) : (
+                  <PaperPlaneTilt size={14} />
+                )}
+                {row.label}
+              </Button>
+              {runResult[row.platform] && (
+                <p className="text-xs text-slate-500 mt-1.5">{runResult[row.platform]}</p>
               )}
-              Kirim ke TikTok
-            </Button>
-            {runResult.TIKTOK && <p className="text-xs text-slate-500 mt-1.5">{runResult.TIKTOK}</p>}
-            {tiktokDestinations.length === 0 && (
-              <p className="text-xs text-slate-400 mt-1.5">Belum ada destination TikTok yang aktif.</p>
-            )}
-          </div>
+              {!row.available && (
+                <p className="text-xs text-slate-400 mt-1.5">Belum ada destination aktif.</p>
+              )}
+            </div>
+          ))}
         </div>
       </Card>
-
-      {googleDestinations.length > 0 && (
-        <Card>
-          <CardTitle className="mb-4">Export CSV Google Ads</CardTitle>
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">Dari tanggal</label>
-              <input
-                type="date"
-                value={csvRange.from}
-                onChange={(e) => setCsvRange((r) => ({ ...r, from: e.target.value }))}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">Sampai tanggal</label>
-              <input
-                type="date"
-                value={csvRange.to}
-                onChange={(e) => setCsvRange((r) => ({ ...r, to: e.target.value }))}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-            </div>
-            {googleDestinations.map((d) => (
-              <a
-                key={d.id}
-                href={`/api/export/google-csv?destinationId=${d.id}&from=${csvRange.from}&to=${csvRange.to}`}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 text-white text-sm font-medium px-4 py-2 hover:bg-slate-800 transition"
-              >
-                <DownloadSimple size={15} />
-                Download ({d.name})
-              </a>
-            ))}
-          </div>
-          <p className="text-xs text-slate-400 mt-3">
-            Unggah file CSV ini manual di Google Ads &rarr; Tools &amp; Settings &rarr; Conversions &rarr;
-            Uploads.
-          </p>
-        </Card>
-      )}
     </div>
   );
 }

@@ -3,13 +3,11 @@ import { WebhooksLogo, LinkSimple, Ticket, Heartbeat } from "@phosphor-icons/rea
 import { Card, CardTitle } from "@/components/ui/Card";
 import { LpSnippetCard } from "@/components/LpSnippetCard";
 import { getVoucherPrefixes } from "@/lib/leads";
+import { resolveBaseUrl } from "@/lib/base-url";
 
 async function getBaseUrl() {
-  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, "");
   const h = await headers();
-  const host = h.get("host");
-  const proto = h.get("x-forwarded-proto") || "https";
-  return `${proto}://${host}`;
+  return resolveBaseUrl((name) => h.get(name));
 }
 
 function InfoRow({ label, value, mono = true }: { label: string; value: string; mono?: boolean }) {

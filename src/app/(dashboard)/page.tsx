@@ -125,8 +125,8 @@ export default async function OverviewPage({
           {waSelectOptions.length >= 1 && (
             <WaFilterSelect
               current={waFilter || ""}
-              options={waSelectOptions}
-              buildHref={(v) => buildHref({ wa: v || undefined })}
+              allHref={buildHref({ wa: undefined })}
+              options={waSelectOptions.map((o) => ({ ...o, href: buildHref({ wa: o.value }) }))}
             />
           )}
           <TrafficToggle current={traffic} buildHref={(v) => buildHref({ traffic: v === "all" ? undefined : v })} />

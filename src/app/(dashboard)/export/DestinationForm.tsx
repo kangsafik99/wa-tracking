@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CircleNotch } from "@phosphor-icons/react/ssr";
+import { CircleNotch, CheckCircle, GoogleLogo } from "@phosphor-icons/react/ssr";
 import { saveDestinationAction, type DestinationInput } from "./actions";
 import { Button } from "@/components/ui/Button";
-import { GOOGLE_DEFAULT_CONVERSION_NAMES } from "@/lib/export/event-maps";
 import type { SafeExportDestination } from "@/lib/export/types";
 import type { ExportPlatform } from "@prisma/client";
 
@@ -34,12 +33,19 @@ export function DestinationForm({
   const [tiktokPixelCode, setTiktokPixelCode] = useState(initial?.tiktokPixelCode || "");
   const [tiktokAccessToken, setTiktokAccessToken] = useState("");
   const [tiktokTestEventCode, setTiktokTestEventCode] = useState(initial?.tiktokTestEventCode || "");
-  const [googleNames, setGoogleNames] = useState<Record<string, string>>({
-    ...GOOGLE_DEFAULT_CONVERSION_NAMES,
-    ...((initial?.googleConversionNames as Record<string, string>) || {}),
-  });
+  const [googleClientId, setGoogleClientId] = useState(initial?.googleClientId || "");
+  const [googleClientSecret, setGoogleClientSecret] = useState("");
+  const [googleDeveloperToken, setGoogleDeveloperToken] = useState("");
+  const [googleCustomerId, setGoogleCustomerId] = useState(initial?.googleCustomerId || "");
+  const [googleLoginCustomerId, setGoogleLoginCustomerId] = useState(initial?.googleLoginCustomerId || "");
+  const [googleActions, setGoogleActions] = useState<Record<string, string>>(
+    (initial?.googleConversionActions as Record<string, string>) || {}
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const redirectUri =
+    typeof window !== "undefined" ? `${window.location.origin}/api/oauth/google/callback` : "";
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,7 +64,12 @@ export function DestinationForm({
       tiktokPixelCode,
       tiktokAccessToken,
       tiktokTestEventCode,
-      googleConversionNames: googleNames,
+      googleClientId,
+      googleClientSecret,
+      googleDeveloperToken,
+      googleCustomerId,
+      googleLoginCustomerId,
+      googleConversionActions: googleActions,
     };
     startTransition(async () => {
       const res = await saveDestinationAction(input);
@@ -93,7 +104,7 @@ export function DestinationForm({
           >
             <option value="META">Meta CAPI</option>
             <option value="TIKTOK">TikTok Events API</option>
-            <option value="GOOGLE_CSV">Google (CSV export)</option>
+            <option value="GOOGLE">Google Ads API</option>
           </select>
         </div>
       </div>
@@ -211,22 +222,115 @@ export function DestinationForm({
         </div>
       )}
 
-      {platform === "GOOGLE_CSV" && (
-        <div className="pt-2 border-t border-slate-200">
-          <p className="text-xs text-slate-500 mb-2">
-            Nama Conversion Action harus persis sama dengan yang dibuat di Google Ads UI.
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            {STATUS_LABELS_FOR_GOOGLE.map((s) => (
-              <div key={s.key}>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">{s.label}</label>
-                <input
-                  value={googleNames[s.key] || ""}
-                  onChange={(e) => setGoogleNames((g) => ({ ...g, [s.key]: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-            ))}
+      {platform === "GOOGLE" && (
+        <div className="space-y-4 pt-2 border-t border-slate-200">
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5">
+            <p className="text-xs text-amber-800">
+              Redirect URI yang harus didaftarkan di Google Cloud Console (OAuth Client &rarr; Authorized
+              redirect URIs):
+            </p>
+            <p className="text-xs font-mono text-amber-900 break-all mt-1">{redirectUri || "..."}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">Client ID</label>
+              <input
+                value={googleClientId}
+                onChange={(e) => setGoogleClientId(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                Client Secret {initial && <span className="text-slate-400">(kosongkan jika tidak ganti)</span>}
+              </label>
+              <input
+                type="password"
+                value={googleClientSecret}
+                onChange={(e) => setGoogleClientSecret(e.target.value)}
+                placeholder={initial ? "••••••••" : ""}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                Developer Token {initial && <span className="text-slate-400">(kosongkan jika tidak ganti)</span>}
+              </label>
+              <input
+                type="password"
+                value={googleDeveloperToken}
+                onChange={(e) => setGoogleDeveloperToken(e.target.value)}
+                placeholder={initial ? "••••••••" : ""}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">Customer ID (akun Ads tujuan)</label>
+              <input
+                value={googleCustomerId}
+                onChange={(e) => setGoogleCustomerId(e.target.value)}
+                placeholder="1234567890"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                Login Customer ID (MCC) <span className="text-slate-400">(opsional, kalau dikelola lewat akun manager)</span>
+              </label>
+              <input
+                value={googleLoginCustomerId}
+                onChange={(e) => setGoogleLoginCustomerId(e.target.value)}
+                placeholder="1234567890"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs text-slate-500 mb-2">
+              Resource name Conversion Action per status (buat dulu di Google Ads UI, format{" "}
+              <span className="font-mono">customers/123.../conversionActions/456...</span>).
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {STATUS_LABELS_FOR_GOOGLE.map((s) => (
+                <div key={s.key}>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">{s.label}</label>
+                  <input
+                    value={googleActions[s.key] || ""}
+                    onChange={(e) => setGoogleActions((g) => ({ ...g, [s.key]: e.target.value }))}
+                    placeholder="customers/.../conversionActions/..."
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 px-3 py-2.5 flex items-center justify-between gap-3">
+            {initial ? (
+              <>
+                <span
+                  className={`inline-flex items-center gap-1.5 text-sm ${
+                    initial.googleConnected ? "text-brand-700" : "text-slate-500"
+                  }`}
+                >
+                  {initial.googleConnected && <CheckCircle size={15} weight="fill" />}
+                  {initial.googleConnected ? "Terhubung ke Google Ads" : "Belum terhubung"}
+                </span>
+                <a
+                  href={`/api/oauth/google/start?destinationId=${initial.id}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium px-3 py-2 hover:bg-slate-800 transition"
+                >
+                  <GoogleLogo size={14} weight="bold" />
+                  {initial.googleConnected ? "Sambungkan ulang" : "Connect Google Ads"}
+                </a>
+              </>
+            ) : (
+              <span className="text-xs text-slate-400">
+                Simpan destination ini dulu, lalu tombol &quot;Connect Google Ads&quot; akan muncul di sini.
+              </span>
+            )}
           </div>
         </div>
       )}
