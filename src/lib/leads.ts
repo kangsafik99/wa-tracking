@@ -37,12 +37,15 @@ export function isUpgrade(current: LeadStatus, target: LeadStatus): boolean {
 }
 
 // Prefix voucher default: BT-, RB-, GM- — tambah lewat env VOUCHER_PREFIXES ("BT,RB,GM")
-export function getVoucherRegex(): RegExp {
-  const prefixes = (process.env.VOUCHER_PREFIXES || "BT,RB,GM")
+export function getVoucherPrefixes(): string[] {
+  return (process.env.VOUCHER_PREFIXES || "BT,RB,GM")
     .split(",")
-    .map((p) => p.trim())
+    .map((p) => p.trim().toUpperCase())
     .filter(Boolean);
-  return new RegExp(`(?:${prefixes.join("|")})-[A-Z0-9]{6,10}`, "i");
+}
+
+export function getVoucherRegex(): RegExp {
+  return new RegExp(`(?:${getVoucherPrefixes().join("|")})-[A-Z0-9]{6,10}`, "i");
 }
 
 export function findVoucherInText(text: string): string | null {
