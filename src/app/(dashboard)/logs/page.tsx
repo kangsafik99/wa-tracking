@@ -1,5 +1,7 @@
+import { CaretRight, WebhooksLogo } from "@phosphor-icons/react/ssr";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/format";
+import { Badge } from "@/components/ui/Badge";
 
 const PAGE_SIZE = 30;
 
@@ -29,23 +31,27 @@ export default async function LogsPage({
         </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {logs.map((log) => (
-          <details key={log.id} className="rounded-xl border border-slate-200 bg-white p-4">
-            <summary className="cursor-pointer text-sm flex items-center justify-between gap-4">
-              <span className="text-slate-500">{formatDate(log.createdAt)}</span>
-              <span className="text-slate-700 font-medium">{log.event || "—"}</span>
-              <span className="text-slate-500 truncate max-w-[280px]">{log.result || ""}</span>
+          <details key={log.id} className="group rounded-xl border border-slate-200 bg-white shadow-card">
+            <summary className="cursor-pointer list-none px-4 py-3 flex items-center gap-3 text-sm">
+              <CaretRight size={13} className="text-slate-400 transition group-open:rotate-90 shrink-0" />
+              <span className="text-slate-400 font-mono text-xs whitespace-nowrap">{formatDate(log.createdAt)}</span>
+              <Badge tone="slate">{log.event || "unknown"}</Badge>
+              <span className="text-slate-500 truncate flex-1">{log.result || ""}</span>
             </summary>
-            <pre className="mt-3 text-xs bg-slate-50 rounded-lg p-3 overflow-x-auto text-slate-700">
+            <pre className="mx-4 mb-4 text-xs bg-slate-950 text-slate-200 rounded-lg p-3.5 overflow-x-auto font-mono">
               {JSON.stringify(log.raw, null, 2)}
             </pre>
           </details>
         ))}
         {logs.length === 0 && (
-          <p className="text-sm text-slate-400 py-10 text-center">
-            Belum ada webhook masuk. Pastikan Gowa sudah diarahkan ke endpoint webhook (lihat Settings).
-          </p>
+          <div className="flex flex-col items-center gap-2 py-16 text-slate-400">
+            <WebhooksLogo size={28} className="text-slate-300" />
+            <p className="text-sm text-center max-w-sm">
+              Belum ada webhook masuk. Pastikan Gowa sudah diarahkan ke endpoint webhook (lihat Settings).
+            </p>
+          </div>
         )}
       </div>
     </div>

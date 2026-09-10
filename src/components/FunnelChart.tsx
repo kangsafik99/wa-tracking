@@ -10,10 +10,15 @@ export function FunnelChart({ data }: { data: { label: string; value: number }[]
         <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#475569" }} />
         <YAxis tick={{ fontSize: 12, fill: "#475569" }} allowDecimals={false} />
         <Tooltip
-          contentStyle={{ borderRadius: 8, borderColor: "#e2e8f0", fontSize: 13 }}
+          contentStyle={{
+            borderRadius: 10,
+            borderColor: "#e2e8f0",
+            fontSize: 13,
+            fontFamily: "var(--font-geist-mono)",
+          }}
           cursor={{ fill: "#f1f5f9" }}
         />
-        <Bar dataKey="value" fill="#16a34a" radius={[6, 6, 0, 0]} />
+        <Bar dataKey="value" fill="#0f9a5c" radius={[6, 6, 0, 0]} maxBarSize={56} />
       </BarChart>
     </ResponsiveContainer>
   );

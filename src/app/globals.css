@@ -2,7 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+}
+
 body {
   background-color: #f8fafc;
   color: #0f172a;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  border-color: theme("colors.slate.200");
+}
+
+::selection {
+  background-color: theme("colors.brand.200");
+  color: theme("colors.brand.900");
+}
+
+:focus-visible {
+  outline: 2px solid theme("colors.brand.500");
+  outline-offset: 2px;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }

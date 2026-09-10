@@ -1,16 +1,33 @@
+import { Users, ChatCircleDots, CheckCircle, CurrencyCircleDollar } from "@phosphor-icons/react/ssr";
 import { prisma } from "@/lib/prisma";
 import { STATUS_LABEL, STATUS_RANK } from "@/lib/leads";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { FunnelChart } from "@/components/FunnelChart";
+import { Card } from "@/components/ui/Card";
 import type { LeadStatus } from "@prisma/client";
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function StatCard({
+  label,
+  value,
+  sub,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  icon: React.ComponentType<{ size?: number; weight?: "regular" | "fill"; className?: string }>;
+}) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="text-2xl font-semibold text-slate-900 mt-1">{value}</p>
-      {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
-    </div>
+    <Card className="flex items-start justify-between">
+      <div>
+        <p className="text-sm text-slate-500">{label}</p>
+        <p className="text-2xl font-semibold text-slate-900 mt-1.5 font-mono tabular-nums">{value}</p>
+        {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
+      </div>
+      <div className="grid place-items-center w-9 h-9 rounded-lg bg-brand-50 text-brand-700 shrink-0">
+        <Icon size={18} weight="fill" />
+      </div>
+    </Card>
   );
 }
 
@@ -49,6 +66,8 @@ export default async function OverviewPage() {
     ["NEW_LEAD", "CONTACT", "FOLLOW_UP", "QUALIFIED_LEAD", "BOOKING", "PURCHASE", "CLOSED_LOST"] as LeadStatus[]
   ).map((s) => ({ label: STATUS_LABEL[s], value: countByStatus.get(s) || 0 }));
 
+  const maxSourceCount = Math.max(1, ...sourceGroups.map((g) => g._count._all));
+
   return (
     <div className="space-y-6">
       <div>
@@ -56,38 +75,52 @@ export default async function OverviewPage() {
         <p className="text-sm text-slate-500">Ringkasan funnel lead WhatsApp Anda.</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Leads" value={totalLeads.toLocaleString("id-ID")} />
-        <StatCard label="Contact Rate" value={formatPercent(contactRate)} sub="Klik yang lanjut chat" />
-        <StatCard label="Qualified Rate" value={formatPercent(qualifiedRate)} />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Total Leads" value={totalLeads.toLocaleString("id-ID")} icon={Users} />
+        <StatCard
+          label="Contact Rate"
+          value={formatPercent(contactRate)}
+          sub="Klik yang lanjut chat"
+          icon={ChatCircleDots}
+        />
+        <StatCard label="Qualified Rate" value={formatPercent(qualifiedRate)} icon={CheckCircle} />
         <StatCard
           label="Purchase"
           value={`${purchaseCount.toLocaleString("id-ID")} (${formatPercent(purchaseRate)})`}
+          icon={CurrencyCircleDollar}
         />
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <p className="text-sm font-medium text-slate-700 mb-1">Total Revenue (Purchase)</p>
-        <p className="text-3xl font-semibold text-brand-700">{formatCurrency(revenue)}</p>
+      <div className="rounded-2xl bg-brand-800 p-5">
+        <p className="text-sm font-medium text-brand-200 mb-1">Total Revenue (Purchase)</p>
+        <p className="text-3xl font-semibold text-white font-mono tabular-nums">{formatCurrency(revenue)}</p>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <p className="text-sm font-medium text-slate-700 mb-3">Distribusi Status Lead</p>
+      <Card>
+        <p className="text-sm font-medium text-slate-700 mb-4">Distribusi Status Lead</p>
         <FunnelChart data={funnelData} />
-      </div>
+      </Card>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <p className="text-sm font-medium text-slate-700 mb-3">Sumber Lead (UTM Source)</p>
-        <div className="space-y-2">
+      <Card>
+        <p className="text-sm font-medium text-slate-700 mb-4">Sumber Lead (UTM Source)</p>
+        <div className="space-y-3">
           {sourceGroups.map((g) => (
-            <div key={g.utmSource ?? "—"} className="flex items-center justify-between text-sm">
-              <span className="text-slate-600">{g.utmSource || "—"}</span>
-              <span className="font-medium text-slate-900">{g._count._all}</span>
+            <div key={g.utmSource ?? "—"} className="flex items-center gap-3 text-sm">
+              <span className="text-slate-600 w-32 shrink-0 truncate">{g.utmSource || "—"}</span>
+              <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-brand-500"
+                  style={{ width: `${(g._count._all / maxSourceCount) * 100}%` }}
+                />
+              </div>
+              <span className="font-mono tabular-nums font-medium text-slate-900 w-8 text-right shrink-0">
+                {g._count._all}
+              </span>
             </div>
           ))}
           {sourceGroups.length === 0 && <p className="text-sm text-slate-400">Belum ada data.</p>}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

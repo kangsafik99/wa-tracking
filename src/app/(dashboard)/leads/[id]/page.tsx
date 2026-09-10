@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CaretLeft } from "@phosphor-icons/react/ssr";
 import { prisma } from "@/lib/prisma";
 import { STATUS_LABEL } from "@/lib/leads";
 import { formatDate } from "@/lib/format";
 import { StatusSelect } from "@/components/StatusSelect";
+import { Card, CardTitle } from "@/components/ui/Card";
 import { EditLeadForm } from "./EditLeadForm";
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,27 +25,24 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center gap-2 text-sm">
-        <Link href="/leads" className="text-slate-500 hover:text-slate-900">
-          Leads
-        </Link>
-        <span className="text-slate-300">/</span>
-        <span className="text-slate-900 font-medium">{lead.voucherCode || lead.phone || lead.id}</span>
-      </div>
+      <Link href="/leads" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900 transition">
+        <CaretLeft size={13} />
+        Leads
+      </Link>
 
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-slate-900">{lead.name || "Tanpa nama"}</h2>
           <p className="text-sm text-slate-500 mt-1">
-            Dibuat {formatDate(lead.createdAt)} &middot; Source: {lead.source} &middot; Status saat ini:{" "}
+            Dibuat {formatDate(lead.createdAt)} &middot; Source {lead.source} &middot; Status saat ini{" "}
             {STATUS_LABEL[lead.status]}
           </p>
         </div>
         <StatusSelect leadId={lead.id} status={lead.status} />
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <p className="text-sm font-medium text-slate-700 mb-4">Edit Data</p>
+      <Card>
+        <CardTitle className="mb-4">Edit Data</CardTitle>
         <EditLeadForm
           leadId={lead.id}
           initial={{
@@ -55,29 +54,29 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             notes: lead.notes || "",
           }}
         />
-      </div>
+      </Card>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <p className="text-sm font-medium text-slate-700 mb-3">Atribusi & Click ID</p>
-        <dl className="grid grid-cols-2 gap-3 text-sm">
+      <Card>
+        <CardTitle className="mb-4">Atribusi & Click ID</CardTitle>
+        <dl className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <dt className="text-slate-500">Voucher Code</dt>
+            <dt className="text-xs text-slate-400 mb-0.5">Voucher Code</dt>
             <dd className="font-mono text-slate-900">{lead.voucherCode || "—"}</dd>
           </div>
           <div>
-            <dt className="text-slate-500">UTM Source / Medium</dt>
+            <dt className="text-xs text-slate-400 mb-0.5">UTM Source / Medium</dt>
             <dd className="text-slate-900">
               {lead.utmSource || "—"} / {lead.utmMedium || "—"}
             </dd>
           </div>
           {clickIds.map((c) => (
             <div key={c.label}>
-              <dt className="text-slate-500">{c.label}</dt>
+              <dt className="text-xs text-slate-400 mb-0.5">{c.label}</dt>
               <dd className="font-mono text-xs text-slate-900 break-all">{c.value || "—"}</dd>
             </div>
           ))}
         </dl>
-      </div>
+      </Card>
     </div>
   );
 }

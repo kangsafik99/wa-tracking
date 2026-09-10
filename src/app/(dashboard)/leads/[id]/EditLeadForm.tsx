@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle, CircleNotch } from "@phosphor-icons/react/ssr";
 import { updateLeadFieldsAction } from "../actions";
+import { Button } from "@/components/ui/Button";
 
 type Props = {
   leadId: string;
@@ -40,34 +42,37 @@ export function EditLeadForm({ leadId, initial }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <Field label="Nama" value={form.name} onChange={(v) => set("name", v)} />
-        <Field label="No HP" value={form.phone} onChange={(v) => set("phone", v)} />
+        <Field label="No HP" value={form.phone} onChange={(v) => set("phone", v)} mono />
         <Field label="Email" value={form.email} onChange={(v) => set("email", v)} />
         <Field
           label="Total Biaya (Rp)"
           value={form.totalValue}
           onChange={(v) => set("totalValue", v)}
           type="number"
+          mono
         />
         <Field label="Cabang" value={form.branch} onChange={(v) => set("branch", v)} />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-500 mb-1">Catatan</label>
+        <label className="block text-xs font-medium text-slate-500 mb-1.5">Catatan</label>
         <textarea
           value={form.notes}
           onChange={(e) => set("notes", e.target.value)}
           rows={3}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
         />
       </div>
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-brand-600 text-white text-sm font-medium px-4 py-2 hover:bg-brand-700 disabled:opacity-60 transition"
-        >
+        <Button type="submit" disabled={pending}>
+          {pending && <CircleNotch size={16} className="animate-spin" />}
           {pending ? "Menyimpan..." : "Simpan"}
-        </button>
-        {saved && !pending && <span className="text-sm text-brand-700">Tersimpan.</span>}
+        </Button>
+        {saved && !pending && (
+          <span className="inline-flex items-center gap-1 text-sm text-brand-700">
+            <CheckCircle size={15} weight="fill" />
+            Tersimpan
+          </span>
+        )}
       </div>
     </form>
   );
@@ -78,20 +83,24 @@ function Field({
   value,
   onChange,
   type = "text",
+  mono = false,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  mono?: boolean;
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-slate-500 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-slate-500 mb-1.5">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
+        className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition ${
+          mono ? "font-mono" : ""
+        }`}
       />
     </div>
   );
