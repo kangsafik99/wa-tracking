@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { WebhooksLogo, LinkSimple, Ticket, Heartbeat } from "@phosphor-icons/react/ssr";
+import { WebhooksLogo, LinkSimple, Ticket, Heartbeat, Flask, ArrowSquareOut } from "@phosphor-icons/react/ssr";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { LpSnippetCard } from "@/components/LpSnippetCard";
 import { getVoucherPrefixes } from "@/lib/settings";
@@ -68,6 +68,29 @@ export default async function SettingsPage() {
           Ganti URL <code className="font-mono">/exec</code> Apps Script di snippet landing page Anda dengan URL di
           atas. Body JSON tetap sama: <code className="font-mono">voucher_code, gclid, fbclid, ttclid, ctwa_clid,
           external_id, utm_source, utm_medium, fbc, fbp</code>.
+        </p>
+      </Card>
+
+      <Card>
+        <div className="flex items-center gap-2.5 mb-3">
+          <SectionIcon icon={Flask} />
+          <CardTitle>Uji Coba (Test LP)</CardTitle>
+        </div>
+        <div className="py-2.5">
+          <p className="text-sm text-slate-500 mb-1">Simulasi landing page untuk uji alur end-to-end</p>
+          <a
+            href={`${baseUrl}/test-lp`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm font-mono text-brand-700 hover:text-brand-800 hover:underline break-all"
+          >
+            {baseUrl}/test-lp
+            <ArrowSquareOut size={14} className="shrink-0" />
+          </a>
+        </div>
+        <p className="text-xs text-slate-400 mt-3">
+          Tidak perlu login. Klik skenario sumber klik, isi nomor WA yang tersambung Gowa, lalu kirim
+          chat untuk uji coba alur penuh tanpa perlu landing page asli.
         </p>
       </Card>
 
