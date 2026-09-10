@@ -23,6 +23,49 @@ function getEventName(platform: PushPlatform, status: LeadStatus): string | null
 
 export type ExportRunResult = { sent: number; skipped: number; errors: number };
 
+// Kirim event Meta untuk SATU lead sekarang juga (tombol "Kirim Custom Event"/
+// "Kirim Purchase" di halaman Inbox) - beda dari runExportForPlatform yang
+// jalan berkala buat banyak lead sekaligus. Sengaja tidak dedup-check
+// (alreadySent) - ini aksi manual eksplisit, dan event_id yang deterministik
+// di sendLeadToMeta bikin Meta sendiri yang dedup kalau ternyata terkirim dua
+// kali.
+export async function sendMetaEventNow(leadId: string): Promise<{ ok: boolean; message: string }> {
+  const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+  if (!lead) return { ok: false, message: "Lead tidak ditemukan" };
+
+  const destinations = await prisma.exportDestination.findMany({ where: { platform: "META", active: true } });
+  if (destinations.length === 0) return { ok: false, message: "Belum ada destination Meta yang aktif" };
+
+  const destination = pickDestinationForLead(lead, destinations);
+  if (!destination) return { ok: false, message: "Tidak ada destination Meta yang cocok untuk lead ini" };
+
+  const eventName = META_EVENT_MAP[lead.status];
+  if (!eventName) return { ok: false, message: `Status "${lead.status}" tidak dipetakan ke event Meta` };
+
+  try {
+    const result = await sendLeadToMeta(lead, eventName, destination);
+    await prisma.exportLog.create({
+      data: {
+        destinationId: destination.id,
+        leadId: lead.id,
+        eventName,
+        status: result.ok ? "success" : "error",
+        responseBody: `HTTP ${result.status}: ${result.body}`,
+      },
+    });
+    return {
+      ok: result.ok,
+      message: result.ok ? `Event "${eventName}" terkirim ke ${destination.name}` : `Gagal: HTTP ${result.status} - ${result.body.slice(0, 200)}`,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    await prisma.exportLog.create({
+      data: { destinationId: destination.id, leadId: lead.id, eventName, status: "error", responseBody: msg },
+    });
+    return { ok: false, message: msg };
+  }
+}
+
 // Jalankan pengiriman event server-side untuk Meta/TikTok - keduanya API
 // per-event sederhana (1 request = 1 conversion). Google beda pola (batch
 // upload), lihat runGoogleExport() di bawah.

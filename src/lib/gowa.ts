@@ -41,6 +41,7 @@ export type IncomingMessage = {
   // satu-satunya cara membedakan akun/brand untuk lead CTWA yang tidak
   // pernah punya voucher (lihat src/lib/export/destinations.ts).
   waDeviceId: string | null;
+  waMessageId: string | null;
 };
 
 export function parseGowaMessage(body: GowaWebhookBody): IncomingMessage | null {
@@ -58,6 +59,7 @@ export function parseGowaMessage(body: GowaWebhookBody): IncomingMessage | null 
     ctwaClid: p.referral?.ctwa_clid || null,
     isFromMe: p.is_from_me === true,
     waDeviceId: waDeviceId || null,
+    waMessageId: p.id || null,
   };
 }
 

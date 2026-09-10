@@ -72,6 +72,9 @@ model Lead {
 
   eventTime DateTime?
   notes     String?
+  ipAddress String? // ditangkap saat POST /api/leads, buat panel atribusi Inbox
+
+  messages Message[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -81,6 +84,22 @@ model Lead {
   @@index([createdAt])
   @@index([utmSource])
   @@index([waDeviceId])
+}
+
+// Riwayat percakapan WhatsApp per lead - dipakai halaman Inbox (menu WhatsApp)
+// supaya bisa lihat & balas chat langsung dari dashboard, bukan cuma pegang
+// data untuk matching voucher lalu dibuang (WebhookLog cuma raw payload,
+// bukan riwayat percakapan yang enak dibaca).
+model Message {
+  id          String   @id @default(cuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  direction   String // "in" | "out"
+  body        String
+  waMessageId String? // id pesan dari Gowa, buat referensi/debug
+  createdAt   DateTime @default(now())
+
+  @@index([leadId, createdAt])
 }
 
 model WebhookLog {

@@ -10,12 +10,14 @@ import {
   SignOut,
   ChatCircleDots,
   PaperPlaneTilt,
+  Chats,
 } from "@phosphor-icons/react/ssr";
 import { logoutAction } from "@/app/(dashboard)/actions";
 
 const NAV_ITEMS = [
   { href: "/", label: "Overview", icon: SquaresFour },
   { href: "/leads", label: "Leads", icon: Users },
+  { href: "/inbox", label: "Inbox", icon: Chats },
   { href: "/export", label: "Export", icon: PaperPlaneTilt },
   { href: "/logs", label: "Webhook Log", icon: ChatCircleText },
   { href: "/settings", label: "Settings", icon: GearSix },
