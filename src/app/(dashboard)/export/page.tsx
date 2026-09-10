@@ -22,7 +22,7 @@ export default async function ExportPage() {
       <div>
         <h2 className="text-xl font-semibold text-slate-900">Export</h2>
         <p className="text-sm text-slate-500">
-          Kirim event Contact/Qualified/Booking/Purchase ke Meta CAPI, TikTok Events API, dan Google Ads.
+          Kirim event Contact/Lead/InitiateCheckout/Purchase ke Meta CAPI, TikTok Events API, dan Google Ads.
         </p>
       </div>
 

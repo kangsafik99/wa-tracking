@@ -4,9 +4,9 @@ import { MagnifyingGlass, CaretLeft, CaretRight, UsersThree } from "@phosphor-ic
 import { prisma } from "@/lib/prisma";
 import { STATUS_LABEL } from "@/lib/leads";
 import { formatCurrency, formatTimeWIB, dateGroupKey, formatDateGroupLabel } from "@/lib/format";
-import { parseTrafficFilter, leadTrafficWhere } from "@/lib/traffic";
+import { paidOnlyLeadWhere } from "@/lib/traffic";
+import { getShowOrganicTraffic } from "@/lib/settings";
 import { StatusSelect } from "@/components/StatusSelect";
-import { TrafficToggle } from "@/components/TrafficToggle";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -30,16 +30,16 @@ const STATUS_OPTIONS: LeadStatus[] = [
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string; page?: string; traffic?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   // "ALL" adalah sentinel buat opsi "Semua" - Radix Select tidak izinkan value="".
   const status = sp.status && sp.status !== "ALL" ? (sp.status as LeadStatus) : undefined;
   const q = sp.q?.trim();
   const page = Math.max(1, Number(sp.page) || 1);
-  const traffic = parseTrafficFilter(sp.traffic);
+  const showOrganicTraffic = await getShowOrganicTraffic();
 
-  const where: Prisma.LeadWhereInput = { ...leadTrafficWhere(traffic) };
+  const where: Prisma.LeadWhereInput = showOrganicTraffic ? {} : paidOnlyLeadWhere();
   if (status) where.status = status;
   if (q) {
     where.OR = [
@@ -75,7 +75,7 @@ export default async function LeadsPage({
 
   function pageHref(overrides: Record<string, string | undefined>) {
     const params = new URLSearchParams();
-    const merged = { status: sp.status, q: sp.q, page: sp.page, traffic: sp.traffic, ...overrides };
+    const merged = { status: sp.status, q: sp.q, page: sp.page, ...overrides };
     for (const [k, v] of Object.entries(merged)) if (v) params.set(k, v);
     return `/leads?${params.toString()}`;
   }
@@ -87,11 +87,9 @@ export default async function LeadsPage({
           <h2 className="text-xl font-semibold text-slate-900">Leads</h2>
           <p className="text-sm text-slate-500">{total.toLocaleString("id-ID")} lead ditemukan.</p>
         </div>
-        <TrafficToggle current={traffic} buildHref={(v) => pageHref({ traffic: v === "all" ? undefined : v, page: undefined })} />
       </div>
 
       <form className="flex flex-wrap gap-3 items-end" action="/leads" method="GET">
-        <input type="hidden" name="traffic" value={traffic} />
         <div className="w-full sm:w-64">
           <Label htmlFor="leads-search">Cari</Label>
           <div className="relative">

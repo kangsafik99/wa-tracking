@@ -1,10 +1,11 @@
 import { headers } from "next/headers";
-import { WebhooksLogo, LinkSimple, Ticket, Heartbeat, Flask, ArrowSquareOut } from "@phosphor-icons/react/ssr";
+import { WebhooksLogo, LinkSimple, Ticket, Heartbeat, Flask, ArrowSquareOut, TrendUp } from "@phosphor-icons/react/ssr";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { LpSnippetCard } from "@/components/LpSnippetCard";
-import { getVoucherPrefixes } from "@/lib/settings";
+import { getVoucherPrefixes, getShowOrganicTraffic } from "@/lib/settings";
 import { resolveBaseUrl } from "@/lib/base-url";
 import { VoucherPrefixesForm } from "./VoucherPrefixesForm";
+import { OrganicTrafficToggle } from "./OrganicTrafficToggle";
 
 async function getBaseUrl() {
   const h = await headers();
@@ -31,6 +32,7 @@ function SectionIcon({ icon: Icon }: { icon: React.ComponentType<{ size?: number
 export default async function SettingsPage() {
   const baseUrl = await getBaseUrl();
   const prefixes = await getVoucherPrefixes();
+  const showOrganicTraffic = await getShowOrganicTraffic();
   const secretSet = Boolean(process.env.GOWA_WEBHOOK_SECRET);
 
   return (
@@ -105,6 +107,21 @@ export default async function SettingsPage() {
         <p className="text-xs text-slate-400 mt-3">
           Prefix baru langsung berlaku untuk voucher baru & pencocokan chat masuk berikutnya, tanpa
           perlu redeploy.
+        </p>
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <SectionIcon icon={TrendUp} />
+            <CardTitle>Trafik Organik</CardTitle>
+          </div>
+          <OrganicTrafficToggle initial={showOrganicTraffic} />
+        </div>
+        <p className="text-xs text-slate-400 mt-3">
+          Trafik organik (chat masuk tanpa click ID sama sekali) tidak bisa dikirim balik jadi sinyal
+          purchase ke server platform iklan, jadi monitoringnya opsional. Default disembunyikan dari
+          Overview & Leads supaya fokus ke performa iklan. Nyalakan kalau tetap mau memantaunya juga.
         </p>
       </Card>
 

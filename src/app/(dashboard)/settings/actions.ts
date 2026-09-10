@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth";
-import { setVoucherPrefixes } from "@/lib/settings";
+import { setVoucherPrefixes, setShowOrganicTraffic } from "@/lib/settings";
 
 async function requireAuth() {
   const session = await getSession();
@@ -29,4 +29,14 @@ export async function updateVoucherPrefixesAction(
   const saved = await setVoucherPrefixes(parsed);
   revalidatePath("/settings");
   return { prefixes: saved };
+}
+
+export async function updateShowOrganicTrafficAction(value: boolean): Promise<{ value: boolean }> {
+  await requireAuth();
+
+  const saved = await setShowOrganicTraffic(value);
+  revalidatePath("/settings");
+  revalidatePath("/");
+  revalidatePath("/leads");
+  return { value: saved };
 }

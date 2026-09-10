@@ -36,3 +36,17 @@ export async function setVoucherPrefixes(prefixes: string[]): Promise<string[]> 
   });
   return value;
 }
+
+export async function getShowOrganicTraffic(): Promise<boolean> {
+  const settings = await getOrCreateSettings();
+  return settings.showOrganicTraffic;
+}
+
+export async function setShowOrganicTraffic(value: boolean): Promise<boolean> {
+  await prisma.appSettings.upsert({
+    where: { id: SETTINGS_ID },
+    update: { showOrganicTraffic: value },
+    create: { id: SETTINGS_ID, showOrganicTraffic: value },
+  });
+  return value;
+}

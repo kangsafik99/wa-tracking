@@ -1,21 +1,21 @@
 import { CaretRight, WebhooksLogo } from "@phosphor-icons/react/ssr";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/format";
-import { parseTrafficFilter, webhookTrafficWhere } from "@/lib/traffic";
+import { paidOnlyWebhookWhere } from "@/lib/traffic";
+import { getShowOrganicTraffic } from "@/lib/settings";
 import { Badge } from "@/components/ui/Badge";
-import { TrafficToggle } from "@/components/TrafficToggle";
 
 const PAGE_SIZE = 30;
 
 export default async function LogsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; traffic?: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
-  const traffic = parseTrafficFilter(sp.traffic);
-  const where = webhookTrafficWhere(traffic);
+  const showOrganicTraffic = await getShowOrganicTraffic();
+  const where = showOrganicTraffic ? {} : paidOnlyWebhookWhere();
 
   const [logs, total] = await Promise.all([
     prisma.webhookLog.findMany({
@@ -36,10 +36,6 @@ export default async function LogsPage({
             Payload mentah dari Gowa untuk verifikasi/debug. {total.toLocaleString("id-ID")} entri.
           </p>
         </div>
-        <TrafficToggle
-          current={traffic}
-          buildHref={(v) => `/logs${v === "all" ? "" : `?traffic=${v}`}`}
-        />
       </div>
 
       <div className="space-y-2.5">
@@ -60,9 +56,9 @@ export default async function LogsPage({
           <div className="flex flex-col items-center gap-2 py-16 text-slate-400">
             <WebhooksLogo size={28} className="text-slate-300" />
             <p className="text-sm text-center max-w-sm">
-              {traffic === "all"
+              {showOrganicTraffic
                 ? "Belum ada webhook masuk. Pastikan Gowa sudah diarahkan ke endpoint webhook (lihat Settings)."
-                : "Tidak ada log yang cocok dengan filter ini."}
+                : "Tidak ada log trafik iklan. Trafik organik lagi disembunyikan (nyalakan di Settings kalau perlu)."}
             </p>
           </div>
         )}

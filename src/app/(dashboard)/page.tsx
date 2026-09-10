@@ -2,10 +2,10 @@ import { Users, ChatCircleDots, CheckCircle, CurrencyCircleDollar } from "@phosp
 import { prisma } from "@/lib/prisma";
 import { STATUS_LABEL, STATUS_RANK } from "@/lib/leads";
 import { formatCurrency, formatPercent } from "@/lib/format";
-import { parseTrafficFilter, leadTrafficWhere } from "@/lib/traffic";
+import { paidOnlyLeadWhere } from "@/lib/traffic";
+import { getShowOrganicTraffic } from "@/lib/settings";
 import { FunnelChart } from "@/components/FunnelChart";
 import { Card } from "@/components/ui/Card";
-import { TrafficToggle } from "@/components/TrafficToggle";
 import type { LeadStatus, Prisma } from "@prisma/client";
 
 function StatCard({
@@ -33,15 +33,10 @@ function StatCard({
   );
 }
 
-export default async function OverviewPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ traffic?: string }>;
-}) {
-  const sp = await searchParams;
-  const traffic = parseTrafficFilter(sp.traffic);
+export default async function OverviewPage() {
+  const showOrganicTraffic = await getShowOrganicTraffic();
 
-  const where: Prisma.LeadWhereInput = { ...leadTrafficWhere(traffic) };
+  const where: Prisma.LeadWhereInput = showOrganicTraffic ? {} : paidOnlyLeadWhere();
 
   const [statusGroups, purchaseAgg, sourceGroups, totalLeads] = await Promise.all([
     prisma.lead.groupBy({ where, by: ["status"], _count: { _all: true } }),
@@ -80,23 +75,12 @@ export default async function OverviewPage({
 
   const maxSourceCount = Math.max(1, ...sourceGroups.map((g) => g._count._all));
 
-  function buildHref(overrides: { traffic?: string }) {
-    const params = new URLSearchParams();
-    const merged = { traffic: sp.traffic, ...overrides };
-    for (const [k, v] of Object.entries(merged)) if (v) params.set(k, v);
-    const qs = params.toString();
-    return qs ? `/?${qs}` : "/";
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl font-semibold text-slate-900">Overview</h2>
           <p className="text-sm text-slate-500">Ringkasan funnel lead WhatsApp Anda.</p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <TrafficToggle current={traffic} buildHref={(v) => buildHref({ traffic: v === "all" ? undefined : v })} />
         </div>
       </div>
 
@@ -108,7 +92,7 @@ export default async function OverviewPage({
           sub="Klik yang lanjut chat"
           icon={ChatCircleDots}
         />
-        <StatCard label="Qualified Rate" value={formatPercent(qualifiedRate)} icon={CheckCircle} />
+        <StatCard label="Lead Rate" value={formatPercent(qualifiedRate)} icon={CheckCircle} />
         <StatCard
           label="Purchase"
           value={`${purchaseCount.toLocaleString("id-ID")} (${formatPercent(purchaseRate)})`}

@@ -38,7 +38,12 @@ model User {
 model AppSettings {
   id              String   @id @default("singleton")
   voucherPrefixes String[] @default(["BT", "RB", "GM"])
-  updatedAt       DateTime @updatedAt
+  // Trafik organik (tanpa click ID sama sekali) tidak bisa dikirim balik jadi
+  // sinyal purchase ke platform iklan (Ebook SINYAL 1.7), jadi monitoringnya
+  // opsional - default disembunyikan dari Overview & Leads, bisa dinyalakan
+  // di sini kalau mau dipantau juga.
+  showOrganicTraffic Boolean  @default(false)
+  updatedAt          DateTime @updatedAt
 }
 
 model Lead {
