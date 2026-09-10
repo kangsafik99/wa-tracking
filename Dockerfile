@@ -35,4 +35,10 @@ COPY --from=builder /app/next.config.mjs ./next.config.mjs
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && npm start"]
+# `db push` (bukan `migrate deploy`) karena repo ini belum punya folder
+# prisma/migrations (perlu koneksi live ke Postgres untuk generate migration
+# SQL yang tidak tersedia saat menulis kode ini). `db push` menyamakan skema
+# langsung ke database tiap container start -- cukup & idempotent untuk
+# proyek solo seperti ini. Bisa dipindah ke migrate deploy + file migrasi
+# nanti kalau butuh riwayat migrasi yang lebih rapi.
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js db push --accept-data-loss --skip-generate && npm start"]

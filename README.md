@@ -64,8 +64,9 @@ Lihat `.env.example` untuk daftar lengkap + penjelasan. Yang **wajib** diisi:
    bukan domain publik, supaya koneksi lewat jaringan internal EasyPanel).
 4. **Port**: container listen di `3000` — set di EasyPanel service settings, lalu attach domain/proxy
    sesuai kebutuhan (mis. `crm.domainanda.com`).
-5. Deploy. `Dockerfile` otomatis menjalankan `npx prisma migrate deploy` saat container start, jadi
-   tabel dibuat otomatis di Postgres yang dikonek.
+5. Deploy. `Dockerfile` otomatis menjalankan `prisma db push` saat container start, jadi tabel
+   dibuat/disinkronkan otomatis ke skema `prisma/schema.prisma` di Postgres yang dikonek (repo ini
+   belum pakai file migrasi versian — cukup untuk proyek solo; lihat komentar di `Dockerfile`).
 6. **Buat akun admin** — jalankan sekali via EasyPanel "Console/Shell" pada service ini:
    ```bash
    npm run db:seed
