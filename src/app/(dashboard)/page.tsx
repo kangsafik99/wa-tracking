@@ -147,7 +147,7 @@ export default async function OverviewPage({
         </div>
       </Card>
 
-      {waGroups.length > 1 && (
+      {waGroups.length >= 1 && (
         <Card>
           <p className="text-sm font-medium text-slate-700 mb-4">Per Nomor WA</p>
           <div className="space-y-3">

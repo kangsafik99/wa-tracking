@@ -126,7 +126,7 @@ export default async function LeadsPage({
             ))}
           </select>
         </div>
-        {waOptions.length > 1 && (
+        {waOptions.length >= 1 && (
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1.5">Nomor WA</label>
             <select
