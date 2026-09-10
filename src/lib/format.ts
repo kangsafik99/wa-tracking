@@ -10,7 +10,7 @@ export function formatCurrency(value: number | string | null | undefined): strin
 
 export function formatPercent(value: number): string {
   if (!Number.isFinite(value)) return "0%";
-  return `${(value * 100).toFixed(1)}%`;
+  return `${Math.round(value * 100)}%`;
 }
 
 export function formatDate(date: Date | string | null | undefined): string {
