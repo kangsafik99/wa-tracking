@@ -181,7 +181,7 @@ curl -X POST https://domain-dashboard-anda/api/leads \
   -d '{"voucher_code":"BT-TEST0001","utm_source":"google","utm_medium":"cpc"}'
 ```
 
-Lalu cek di dashboard → Leads, harus muncul baris baru status "New Lead".
+Lalu cek di dashboard → Leads, harus muncul baris baru status "Signal".
 
 ## Export Layer: Meta CAPI / TikTok Events API / Google Ads
 

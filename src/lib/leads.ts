@@ -15,10 +15,12 @@ export const STATUS_RANK: Record<LeadStatus, number> = {
 // Untuk status yang diekspor ke Meta (lihat META_EVENT_MAP di
 // lib/export/event-maps.ts), label dibikin PERSIS sama dengan nama event
 // standar Meta - biar seragam dan gampang dicocokkan lewat Events
-// Manager/Ads Manager. Status yang tidak diekspor (New Lead/Follow Up/
+// Manager/Ads Manager. Status yang tidak diekspor (Signal/Follow Up/
 // Closed Lost) tidak punya padanan Meta, jadi tetap pakai istilah CRM.
+// NEW_LEAD dilabeli "Signal" (bukan "New Lead") supaya tidak ambigu
+// dengan QUALIFIED_LEAD yang labelnya "Lead".
 export const STATUS_LABEL: Record<LeadStatus, string> = {
-  NEW_LEAD: "New Lead",
+  NEW_LEAD: "Signal",
   CONTACT: "Contact",
   FOLLOW_UP: "Follow Up",
   QUALIFIED_LEAD: "Lead",
