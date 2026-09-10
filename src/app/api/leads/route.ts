@@ -21,12 +21,6 @@ const LeadCreateSchema = z.object({
   branch: z.string().optional(),
 });
 
-function getClientIp(req: NextRequest): string | null {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return req.headers.get("x-real-ip") || null;
-}
-
 function corsHeaders() {
   const origin = process.env.ALLOWED_ORIGIN || "*";
   return {
@@ -82,7 +76,6 @@ export async function POST(req: NextRequest) {
         fbc: p.fbc || null,
         fbp: p.fbp || null,
         branch: p.branch || null,
-        ipAddress: getClientIp(req),
         eventTime: new Date(),
       },
     });

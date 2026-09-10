@@ -24,14 +24,10 @@ Klik iklan → Landing Page (voucher code) → POST /api/leads (Pending Lead)
   Iklan/Organik (best-effort dari teks hasil proses) dan **auto-cleanup** setelah masa retensi.
 - **Settings** — info URL webhook Gowa & endpoint landing page, **generator snippet capture siap
   copy-paste** untuk landing page Anda, konfigurasi prefix voucher, dan health check.
-- **Export** — kirim event Contact/Qualified/Booking/Purchase otomatis ke **Meta CAPI**, **TikTok
-  Events API**, dan **Google Ads API** (OAuth, batch upload). Destination (kredensial per akun)
-  dikelola langsung dari dashboard, bukan env var — siap multi-akun tanpa redeploy. Lihat
-  [Export Layer](#export-layer-meta-capi--tiktok-events-api--google-ads-api).
-- **Inbox** — percakapan WhatsApp langsung di dashboard (2 arah: baca & balas chat tanpa pegang HP),
-  plus panel Journey Status, atribusi Meta Ads, dan aksi cepat (Tandai Qualified, Kirim Custom Event,
-  Kirim Purchase, Tandai Lost/Junk) yang langsung memicu Meta CAPI untuk lead itu. Satu nomor WA,
-  fokus Meta Ads. Lihat [Inbox WhatsApp](#inbox-whatsapp).
+- **Export** — kirim event Contact/Qualified/Booking/Purchase ke **Meta CAPI**, **TikTok Events API**
+  (otomatis berkala + tombol kirim manual), dan **Google Ads** (CSV siap upload). Destination
+  (Dataset ID/Access Token/dst) dikelola langsung dari dashboard, bukan env var — siap multi-akun
+  tanpa redeploy. Lihat [Export Layer](#export-layer-meta-capi--tiktok-events-api--google-ads).
 - **`/test-lp`** — halaman publik (tanpa login) untuk simulasi landing page + uji coba alur end-to-end
   tanpa perlu website asli. Lihat [Uji Coba End-to-End](#uji-coba-end-to-end).
 
@@ -192,7 +188,7 @@ curl -X POST https://domain-dashboard-anda/api/leads \
 
 Lalu cek di dashboard → Leads, harus muncul baris baru status "New Lead".
 
-## Export Layer: Meta CAPI / TikTok Events API / Google Ads API
+## Export Layer: Meta CAPI / TikTok Events API / Google Ads
 
 Menu **Export** di dashboard mengirim status Contact/Qualified Lead/Booking/Purchase sebagai event
 konversi server-side ke platform iklan (Ebook Bagian 5) — inilah yang menutup loop "SINYAL": algoritma
@@ -260,41 +256,9 @@ Access Token statis seperti Meta/TikTok):
    tersimpan di database, dipakai otomatis oleh `src/lib/export/google-oauth.ts` tiap kali perlu access
    token baru.
 
-## Inbox WhatsApp
-
-Menu **Inbox** menampilkan percakapan WhatsApp langsung di dashboard (satu nomor WA, fokus Meta Ads) -
-CS bisa kerja sepenuhnya dari dashboard tanpa pegang HP, sekaligus lihat atribusi & memicu event CAPI
-tanpa pindah halaman.
-
-- **Riwayat percakapan** (model `Message`) - setiap chat masuk (matched voucher, CTWA, maupun orphan)
-  dan setiap balasan keluar (dari dashboard atau dari HP langsung) tercatat sebagai thread per lead,
-  bukan cuma payload mentah di Webhook Log.
-- **Balas dari dashboard** - kotak balas di Inbox memanggil balik REST API Gowa sendiri
-  (`src/lib/gowa-send.ts`, endpoint `POST /send/message`, field & Basic Auth diverifikasi ke source
-  code go-whatsapp-web-multidevice) untuk kirim pesan, bukan cuma terima webhook.
-- **Journey Status** - stepper visual New Lead → Contact → Qualified Lead → Booking → Purchase (pakai
-  `STATUS_RANK`/`STATUS_LABEL` yang sama dengan Leads).
-- **Atribusi Meta Ads** - `utmSource`/`utmMedium`/`utmCampaign` + IP (ditangkap saat `POST /api/leads`,
-  kolom `Lead.ipAddress`).
-- **Aksi CAPI** per lead: **Tandai Qualified** (update status), **Kirim Custom Event** (kirim event
-  Meta CAPI sesuai status saat ini SEKARANG juga, tidak nunggu jadwal berkala), **Kirim Purchase**
-  (set status Purchase + langsung kirim event), **Tandai Lost/Junk** (Closed Lost). Ketiganya di luar
-  `Kirim Custom Event` reuse action yang sama dengan halaman Leads.
-
-Butuh env tambahan supaya balas-chat berfungsi:
-
-| Variable | Keterangan |
-|---|---|
-| `GOWA_API_URL` | Base URL Gowa Anda, mis. `https://gowa.domain-anda.com` |
-| `GOWA_API_USERNAME` / `GOWA_API_PASSWORD` | Samakan dengan `APP_BASIC_AUTH` di container Gowa |
-| `GOWA_DEVICE_ID` | Opsional - cuma perlu diisi kalau Gowa Anda punya lebih dari satu device/nomor terhubung |
-
 ## Yang BELUM termasuk di v1 ini
 
 - **Sinkronisasi Order/POS otomatis** (Bonus 02) — untuk sekarang, update status ke Booking/Purchase +
   nilai transaksi dilakukan manual lewat halaman **Leads → Detail** di dashboard.
-- **Multi-nomor WA di Inbox** — saat ini didesain untuk satu nomor WhatsApp (sesuai kebutuhan). Kalau
-  nanti pakai lebih dari satu nomor, Inbox perlu tambahan filter/switcher per nomor (data attribusinya,
-  `Lead.waDeviceId`, sudah siap dari fitur Export multi-akun sebelumnya).
 
 Kabari saja kalau mau dibangun.
