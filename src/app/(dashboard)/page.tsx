@@ -3,11 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { STATUS_LABEL, STATUS_RANK } from "@/lib/leads";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { parseTrafficFilter, leadTrafficWhere } from "@/lib/traffic";
-import { buildWaLabelMap, resolveWaLabel } from "@/lib/export/destinations";
 import { FunnelChart } from "@/components/FunnelChart";
 import { Card } from "@/components/ui/Card";
 import { TrafficToggle } from "@/components/TrafficToggle";
-import { WaFilterSelect } from "@/components/WaFilterSelect";
 import type { LeadStatus, Prisma } from "@prisma/client";
 
 function StatCard({
@@ -38,52 +36,29 @@ function StatCard({
 export default async function OverviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ traffic?: string; wa?: string }>;
+  searchParams: Promise<{ traffic?: string }>;
 }) {
   const sp = await searchParams;
   const traffic = parseTrafficFilter(sp.traffic);
-  const waFilter = sp.wa?.trim();
 
   const where: Prisma.LeadWhereInput = { ...leadTrafficWhere(traffic) };
-  if (waFilter) where.waDeviceId = waFilter;
 
-  const [statusGroups, purchaseAgg, sourceGroups, waGroups, allWaGroups, destinations, totalLeads] =
-    await Promise.all([
-      prisma.lead.groupBy({ where, by: ["status"], _count: { _all: true } }),
-      prisma.lead.aggregate({
-        where: { ...where, status: "PURCHASE" },
-        _sum: { totalValue: true },
-        _count: { _all: true },
-      }),
-      prisma.lead.groupBy({
-        where,
-        by: ["utmSource"],
-        _count: { _all: true },
-        orderBy: { _count: { utmSource: "desc" } },
-        take: 8,
-      }),
-      prisma.lead.groupBy({
-        where: { ...where, waDeviceId: { not: null } },
-        by: ["waDeviceId"],
-        _count: { _all: true },
-        orderBy: { _count: { waDeviceId: "desc" } },
-      }),
-      // Daftar pilihan dropdown - sengaja tidak ikut difilter wa (biar semua
-      // opsi tetap kelihatan), tapi tetap ikut filter Iklan/Organik.
-      prisma.lead.groupBy({
-        where: { ...leadTrafficWhere(traffic), waDeviceId: { not: null } },
-        by: ["waDeviceId"],
-        _count: { _all: true },
-        orderBy: { _count: { waDeviceId: "desc" } },
-      }),
-      prisma.exportDestination.findMany({ select: { name: true, waNumbers: true } }),
-      prisma.lead.count({ where }),
-    ]);
-
-  const waLabelMap = buildWaLabelMap(destinations);
-  const waSelectOptions = allWaGroups
-    .filter((g): g is typeof g & { waDeviceId: string } => Boolean(g.waDeviceId))
-    .map((g) => ({ value: g.waDeviceId, label: resolveWaLabel(g.waDeviceId, waLabelMap), count: g._count._all }));
+  const [statusGroups, purchaseAgg, sourceGroups, totalLeads] = await Promise.all([
+    prisma.lead.groupBy({ where, by: ["status"], _count: { _all: true } }),
+    prisma.lead.aggregate({
+      where: { ...where, status: "PURCHASE" },
+      _sum: { totalValue: true },
+      _count: { _all: true },
+    }),
+    prisma.lead.groupBy({
+      where,
+      by: ["utmSource"],
+      _count: { _all: true },
+      orderBy: { _count: { utmSource: "desc" } },
+      take: 8,
+    }),
+    prisma.lead.count({ where }),
+  ]);
 
   const countByStatus = new Map<LeadStatus, number>();
   for (const g of statusGroups) countByStatus.set(g.status, g._count._all);
@@ -104,11 +79,10 @@ export default async function OverviewPage({
   ).map((s) => ({ label: STATUS_LABEL[s], value: countByStatus.get(s) || 0 }));
 
   const maxSourceCount = Math.max(1, ...sourceGroups.map((g) => g._count._all));
-  const maxWaCount = Math.max(1, ...waGroups.map((g) => g._count._all));
 
-  function buildHref(overrides: { traffic?: string; wa?: string }) {
+  function buildHref(overrides: { traffic?: string }) {
     const params = new URLSearchParams();
-    const merged = { traffic: sp.traffic, wa: sp.wa, ...overrides };
+    const merged = { traffic: sp.traffic, ...overrides };
     for (const [k, v] of Object.entries(merged)) if (v) params.set(k, v);
     const qs = params.toString();
     return qs ? `/?${qs}` : "/";
@@ -122,13 +96,6 @@ export default async function OverviewPage({
           <p className="text-sm text-slate-500">Ringkasan funnel lead WhatsApp Anda.</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          {waSelectOptions.length >= 1 && (
-            <WaFilterSelect
-              current={waFilter || ""}
-              allHref={buildHref({ wa: undefined })}
-              options={waSelectOptions.map((o) => ({ ...o, href: buildHref({ wa: o.value }) }))}
-            />
-          )}
           <TrafficToggle current={traffic} buildHref={(v) => buildHref({ traffic: v === "all" ? undefined : v })} />
         </div>
       </div>
@@ -179,30 +146,6 @@ export default async function OverviewPage({
           {sourceGroups.length === 0 && <p className="text-sm text-slate-400">Belum ada data.</p>}
         </div>
       </Card>
-
-      {waGroups.length >= 1 && (
-        <Card>
-          <p className="text-sm font-medium text-slate-700 mb-4">Per Nomor WA</p>
-          <div className="space-y-3">
-            {waGroups.map((g) => (
-              <div key={g.waDeviceId} className="flex items-center gap-3 text-sm">
-                <span className="text-slate-600 w-32 shrink-0 truncate">
-                  {resolveWaLabel(g.waDeviceId, waLabelMap)}
-                </span>
-                <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-brand-500"
-                    style={{ width: `${(g._count._all / maxWaCount) * 100}%` }}
-                  />
-                </div>
-                <span className="font-mono tabular-nums font-medium text-slate-900 w-8 text-right shrink-0">
-                  {g._count._all}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

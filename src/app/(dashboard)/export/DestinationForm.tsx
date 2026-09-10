@@ -26,7 +26,6 @@ export function DestinationForm({
   const [active, setActive] = useState(initial?.active ?? true);
   const [isDefault, setIsDefault] = useState(initial?.isDefault ?? false);
   const [voucherPrefixes, setVoucherPrefixes] = useState((initial?.voucherPrefixes || []).join(", "));
-  const [waNumbers, setWaNumbers] = useState((initial?.waNumbers || []).join(", "));
   const [metaDatasetId, setMetaDatasetId] = useState(initial?.metaDatasetId || "");
   const [metaAccessToken, setMetaAccessToken] = useState("");
   const [metaTestEventCode, setMetaTestEventCode] = useState(initial?.metaTestEventCode || "");
@@ -57,7 +56,6 @@ export function DestinationForm({
       active,
       isDefault,
       voucherPrefixes,
-      waNumbers,
       metaDatasetId,
       metaAccessToken,
       metaTestEventCode,
@@ -109,36 +107,17 @@ export function DestinationForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">
-            Prefix voucher (pisahkan koma, mis. <span className="font-mono">BT, RB</span>)
-          </label>
-          <input
-            value={voucherPrefixes}
-            onChange={(e) => setVoucherPrefixes(e.target.value)}
-            disabled={isDefault}
-            placeholder="BT, RB"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-slate-100"
-          />
-          <p className="text-[11px] text-slate-400 mt-1">Jalur normal LPWA/TikTok/Google (selalu ada voucher).</p>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">
-            Nomor WA (buat CTWA tanpa voucher, pisahkan koma)
-          </label>
-          <input
-            value={waNumbers}
-            onChange={(e) => setWaNumbers(e.target.value)}
-            disabled={isDefault}
-            placeholder="628123456789"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-slate-100"
-          />
-          <p className="text-[11px] text-slate-400 mt-1">
-            Nomor WA yang menerima chat CTWA iklan ini - CTWA tidak lewat landing page jadi tidak ada
-            voucher.
-          </p>
-        </div>
+      <div>
+        <label className="block text-xs font-medium text-slate-500 mb-1.5">
+          Prefix voucher (pisahkan koma, mis. <span className="font-mono">BT, RB</span>)
+        </label>
+        <input
+          value={voucherPrefixes}
+          onChange={(e) => setVoucherPrefixes(e.target.value)}
+          disabled={isDefault}
+          placeholder="BT, RB"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-slate-100"
+        />
       </div>
 
       <div className="flex items-center gap-5">
@@ -148,7 +127,7 @@ export function DestinationForm({
         </label>
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} />
-          Jadikan default (fallback terakhir kalau tidak ada prefix/nomor WA yang cocok)
+          Jadikan default (fallback untuk lead tanpa prefix cocok, mis. CTWA)
         </label>
       </div>
 

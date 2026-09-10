@@ -36,11 +36,6 @@ click ID (`gclid`/`ttclid`/`fbclid`/`ctwaClid`); Organik = tidak ada sama sekali
 atribusi, klik Google Maps, direct, atau orphan capture dari chat) — sesuai prinsip Ebook SINYAL 1.7:
 jangan hitung trafik organik sebagai konversi iklan berbayar.
 
-**Bedakan lead per nomor WA (multi-akun/multi-brand)**: Overview (breakdown "Per Nomor WA", muncul
-otomatis kalau ada ≥2 nomor) dan Leads (kolom + filter "Nomor WA") menampilkan nama Destination yang
-sudah Anda isi di menu Export kalau nomornya terdaftar di sana, fallback ke nomor mentah kalau belum
-(`src/lib/export/destinations.ts` → `resolveWaLabel`).
-
 ## Stack
 
 - **Next.js 15** (App Router, TypeScript) — dashboard + API dalam satu aplikasi
@@ -197,18 +192,9 @@ iklan belajar dari pelanggan sungguhan, bukan cuma klik.
 **Konsep "Destination"**: karena click ID bersifat *account-scoped* (Ebook 1.2 — gclid/fbclid/ttclid
 dari satu Ad Account tidak dikenali akun lain), tiap Ad Account/brand butuh kredensial ekspor sendiri.
 Destination dikelola dari dashboard (bukan env var) supaya bisa tambah/edit akun kapan saja tanpa
-redeploy. Dua cara sebuah lead di-route ke destination yang tepat:
-
-- **Prefix voucher** (mis. `BT-` → Akun A, `RB-` → Akun B) — jalur normal LPWA/TikTok/Google, karena
-  semuanya selalu lewat landing page dan selalu punya voucher.
-- **Nomor WhatsApp penerima chat** (`waNumbers`) — khusus untuk lead **CTWA**, yang klik langsung ke
-  WhatsApp tanpa lewat landing page sama sekali, jadi **tidak pernah punya voucher/prefix**. Satu-satunya
-  sinyal untuk membedakan brand/akun di sini adalah nomor WA mana yang menerima chat-nya (iklan CTWA
-  brand A pasti diarahkan ke nomor WA brand A). Nomor ini otomatis tertangkap dari `device_id` payload
-  webhook Gowa (`src/lib/gowa.ts`, kolom `Lead.waDeviceId`).
-
-Satu destination bisa ditandai **default** sebagai fallback terakhir kalau tidak ada prefix voucher
-maupun nomor WA yang cocok.
+redeploy. Lead di-route ke destination yang tepat lewat **prefix voucher** (mis. `BT-` → Akun A,
+`RB-` → Akun B). Satu destination bisa ditandai **default** sebagai fallback terakhir kalau tidak ada
+prefix voucher yang cocok (termasuk untuk lead CTWA yang memang tidak pernah punya voucher).
 
 | Platform | Cara kerja | Kredensial yang dibutuhkan |
 |---|---|---|

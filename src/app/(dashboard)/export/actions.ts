@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { runExportForPlatform, runGoogleExport, type ExportRunResult } from "@/lib/export/run";
-import { normalizePhone } from "@/lib/leads";
 import type { ExportPlatform } from "@prisma/client";
 
 async function requireAuth() {
@@ -20,7 +19,6 @@ export type DestinationInput = {
   active: boolean;
   isDefault: boolean;
   voucherPrefixes: string; // comma-separated dari form, di-parse jadi array
-  waNumbers: string; // comma-separated nomor WA (untuk routing lead CTWA tanpa voucher)
   metaDatasetId?: string;
   metaAccessToken?: string; // kosong saat edit = jangan ubah
   metaTestEventCode?: string;
@@ -42,20 +40,12 @@ function parsePrefixes(raw: string): string[] {
     .filter(Boolean);
 }
 
-function parseWaNumbers(raw: string): string[] {
-  return raw
-    .split(",")
-    .map((p) => normalizePhone(p.trim()))
-    .filter(Boolean);
-}
-
 export async function saveDestinationAction(input: DestinationInput): Promise<{ error?: string }> {
   await requireAuth();
 
   const voucherPrefixes = parsePrefixes(input.voucherPrefixes);
-  const waNumbers = parseWaNumbers(input.waNumbers);
-  if (!input.isDefault && voucherPrefixes.length === 0 && waNumbers.length === 0) {
-    return { error: "Isi minimal satu prefix voucher atau nomor WA, atau tandai sebagai default." };
+  if (!input.isDefault && voucherPrefixes.length === 0) {
+    return { error: "Isi minimal satu prefix voucher, atau tandai sebagai default." };
   }
 
   const baseData = {
@@ -64,7 +54,6 @@ export async function saveDestinationAction(input: DestinationInput): Promise<{ 
     active: input.active,
     isDefault: input.isDefault,
     voucherPrefixes,
-    waNumbers,
     metaDatasetId: input.platform === "META" ? input.metaDatasetId?.trim() || null : null,
     metaTestEventCode: input.platform === "META" ? input.metaTestEventCode?.trim() || null : null,
     tiktokPixelCode: input.platform === "TIKTOK" ? input.tiktokPixelCode?.trim() || null : null,

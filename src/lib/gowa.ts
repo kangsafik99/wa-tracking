@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import { normalizePhone } from "@/lib/leads";
 
 // Bentuk payload webhook Gowa (go-whatsapp-web-multidevice), lihat docs/webhook-payload.md:
 // { event: "message", device_id, session_id?, payload: { id, chat_id, from, from_name,
@@ -37,10 +36,6 @@ export type IncomingMessage = {
   name: string;
   ctwaClid: string | null;
   isFromMe: boolean;
-  // Nomor WA (device Gowa) yang MENERIMA chat ini, bukan nomor pengirim -
-  // satu-satunya cara membedakan akun/brand untuk lead CTWA yang tidak
-  // pernah punya voucher (lihat src/lib/export/destinations.ts).
-  waDeviceId: string | null;
 };
 
 export function parseGowaMessage(body: GowaWebhookBody): IncomingMessage | null {
@@ -49,7 +44,6 @@ export function parseGowaMessage(body: GowaWebhookBody): IncomingMessage | null 
 
   const phoneRaw = p.from || p.chat_id || "";
   const name = p.sender_display_name || p.from_name || "Pelanggan WA";
-  const waDeviceId = body.device_id ? normalizePhone(body.device_id) : null;
 
   return {
     text: p.body || "",
@@ -57,7 +51,6 @@ export function parseGowaMessage(body: GowaWebhookBody): IncomingMessage | null 
     name,
     ctwaClid: p.referral?.ctwa_clid || null,
     isFromMe: p.is_from_me === true,
-    waDeviceId: waDeviceId || null,
   };
 }
 

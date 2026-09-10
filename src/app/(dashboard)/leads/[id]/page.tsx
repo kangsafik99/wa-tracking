@@ -18,7 +18,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     { label: "TTCLID", value: lead.ttclid },
     { label: "FBCLID", value: lead.fbclid },
     { label: "CTWA_CLID", value: lead.ctwaClid },
-    { label: "Nomor WA Penerima", value: lead.waDeviceId },
     { label: "External ID", value: lead.externalId },
     { label: "_FBC", value: lead.fbc },
     { label: "_FBP", value: lead.fbp },
