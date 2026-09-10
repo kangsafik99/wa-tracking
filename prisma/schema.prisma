@@ -32,6 +32,15 @@ model User {
   createdAt    DateTime @default(now())
 }
 
+// Baris tunggal (id selalu "singleton") untuk pengaturan yang dulunya env var
+// statis - dipindah ke database supaya bisa diedit dari Settings tanpa
+// redeploy. Lihat src/lib/settings.ts.
+model AppSettings {
+  id              String   @id @default("singleton")
+  voucherPrefixes String[] @default(["BT", "RB", "GM"])
+  updatedAt       DateTime @updatedAt
+}
+
 model Lead {
   id          String     @id @default(cuid())
   voucherCode String?    @unique

@@ -85,9 +85,9 @@ export function LpSnippetCard({ apiUrl, prefixes }: { apiUrl: string; prefixes: 
       </div>
 
       <p className="text-xs text-slate-400 mt-3">
-        Multi-domain/multi-brand? Pasang snippet dengan prefix berbeda di tiap domain (atur lewat{" "}
-        <code className="font-mono">VOUCHER_PREFIXES</code>), supaya lead dari tiap sumber bisa dipisahkan
-        (lihat Ebook SINYAL 1.2 & 3.5).
+        Multi-domain/multi-brand? Pasang snippet dengan prefix berbeda di tiap domain (atur di card
+        &quot;Konfigurasi Voucher&quot; di bawah), supaya lead dari tiap sumber bisa dipisahkan (lihat
+        Ebook SINYAL 1.2 &amp; 3.5).
       </p>
     </Card>
   );

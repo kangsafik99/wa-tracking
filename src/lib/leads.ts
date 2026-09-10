@@ -36,20 +36,14 @@ export function isUpgrade(current: LeadStatus, target: LeadStatus): boolean {
   return STATUS_RANK[target] > STATUS_RANK[current];
 }
 
-// Prefix voucher default: BT-, RB-, GM- — tambah lewat env VOUCHER_PREFIXES ("BT,RB,GM")
-export function getVoucherPrefixes(): string[] {
-  return (process.env.VOUCHER_PREFIXES || "BT,RB,GM")
-    .split(",")
-    .map((p) => p.trim().toUpperCase())
-    .filter(Boolean);
+// Prefix voucher dikelola dari Settings (database, lihat src/lib/settings.ts) -
+// fungsi di sini murni/sync, cuma menyusun regex dari prefix yang dioper.
+export function buildVoucherRegex(prefixes: string[]): RegExp {
+  return new RegExp(`(?:${prefixes.join("|")})-[A-Z0-9]{6,10}`, "i");
 }
 
-export function getVoucherRegex(): RegExp {
-  return new RegExp(`(?:${getVoucherPrefixes().join("|")})-[A-Z0-9]{6,10}`, "i");
-}
-
-export function findVoucherInText(text: string): string | null {
-  const match = text.match(getVoucherRegex());
+export function findVoucherInText(text: string, prefixes: string[]): string | null {
+  const match = text.match(buildVoucherRegex(prefixes));
   return match ? match[0].toUpperCase() : null;
 }
 

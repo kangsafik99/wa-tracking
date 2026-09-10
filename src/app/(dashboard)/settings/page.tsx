@@ -2,8 +2,9 @@ import { headers } from "next/headers";
 import { WebhooksLogo, LinkSimple, Ticket, Heartbeat } from "@phosphor-icons/react/ssr";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { LpSnippetCard } from "@/components/LpSnippetCard";
-import { getVoucherPrefixes } from "@/lib/leads";
+import { getVoucherPrefixes } from "@/lib/settings";
 import { resolveBaseUrl } from "@/lib/base-url";
+import { VoucherPrefixesForm } from "./VoucherPrefixesForm";
 
 async function getBaseUrl() {
   const h = await headers();
@@ -29,7 +30,7 @@ function SectionIcon({ icon: Icon }: { icon: React.ComponentType<{ size?: number
 
 export default async function SettingsPage() {
   const baseUrl = await getBaseUrl();
-  const prefixes = getVoucherPrefixes();
+  const prefixes = await getVoucherPrefixes();
   const secretSet = Boolean(process.env.GOWA_WEBHOOK_SECRET);
 
   return (
@@ -77,10 +78,10 @@ export default async function SettingsPage() {
           <SectionIcon icon={Ticket} />
           <CardTitle>Konfigurasi Voucher</CardTitle>
         </div>
-        <InfoRow label="Prefix aktif" value={prefixes.join(", ")} />
+        <VoucherPrefixesForm initial={prefixes} />
         <p className="text-xs text-slate-400 mt-3">
-          Ubah lewat env <code className="font-mono">VOUCHER_PREFIXES</code> (pisahkan koma, mis.{" "}
-          <code className="font-mono">BT,RB,GM</code>).
+          Prefix baru langsung berlaku untuk voucher baru & pencocokan chat masuk berikutnya, tanpa
+          perlu redeploy.
         </p>
       </Card>
 

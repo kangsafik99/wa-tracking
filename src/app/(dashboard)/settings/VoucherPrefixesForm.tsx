@@ -1,0 +1,57 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { CheckCircle, CircleNotch } from "@phosphor-icons/react/ssr";
+import { updateVoucherPrefixesAction } from "./actions";
+import { Button } from "@/components/ui/Button";
+
+export function VoucherPrefixesForm({ initial }: { initial: string[] }) {
+  const [value, setValue] = useState(initial.join(", "));
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaved(false);
+    startTransition(async () => {
+      const res = await updateVoucherPrefixesAction(value);
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      if (res.prefixes) setValue(res.prefixes.join(", "));
+      setSaved(true);
+    });
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-2">
+      <label className="block text-xs font-medium text-slate-500 mb-1.5">
+        Prefix voucher (pisahkan koma, mis. <span className="font-mono">BT, RB, GM</span>)
+      </label>
+      <div className="flex items-center gap-2">
+        <input
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setSaved(false);
+          }}
+          className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+        />
+        <Button type="submit" size="sm" disabled={pending}>
+          {pending && <CircleNotch size={14} className="animate-spin" />}
+          Simpan
+        </Button>
+      </div>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      {saved && !pending && (
+        <p className="text-xs text-brand-700 inline-flex items-center gap-1">
+          <CheckCircle size={13} weight="fill" />
+          Tersimpan
+        </p>
+      )}
+    </form>
+  );
+}

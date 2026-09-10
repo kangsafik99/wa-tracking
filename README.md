@@ -86,7 +86,7 @@ Opsional (sudah punya default yang masuk akal):
 
 | Variable | Default | Keterangan |
 |---|---|---|
-| `VOUCHER_PREFIXES` | `BT,RB,GM` | Prefix kode voucher yang dikenali; juga jadi pilihan di generator snippet Settings |
+| `VOUCHER_PREFIXES` | `BT,RB,GM` | **Legacy** - dipakai cuma sekali sebagai migrasi awal kalau belum ada data di database. Setelah itu diabaikan; edit prefix dari Settings → Konfigurasi Voucher di dashboard. |
 | `CAPTURE_NO_VOUCHER` | `true` | Tangkap No HP walau voucher hilang/tak ketemu (orphan capture) |
 | `ALLOWED_ORIGIN` | `*` | Origin yang diizinkan panggil `POST /api/leads` dari browser (CORS) |
 | `APP_URL` | (auto dari request host) | URL publik aplikasi, dipakai di halaman Settings |

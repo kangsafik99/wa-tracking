@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { findVoucherInText, normalizePhone, isValidPhone } from "@/lib/leads";
+import { getVoucherPrefixes } from "@/lib/settings";
 import type { IncomingMessage } from "@/lib/gowa";
 
 // Port dari processIncoming_ + createOrphanLead_ (Bonus 01 Apps Script), ditambah
@@ -8,7 +9,8 @@ export async function processIncomingMessage(m: IncomingMessage): Promise<string
   if (m.isFromMe) return "ignored: outgoing message";
 
   const phone = normalizePhone(m.phone);
-  const voucher = findVoucherInText(m.text);
+  const prefixes = await getVoucherPrefixes();
+  const voucher = findVoucherInText(m.text, prefixes);
 
   if (voucher) {
     const lead = await prisma.lead.findUnique({ where: { voucherCode: voucher } });
