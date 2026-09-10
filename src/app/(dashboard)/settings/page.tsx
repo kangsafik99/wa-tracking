@@ -10,9 +10,9 @@ async function getBaseUrl() {
 
 function InfoRow({ label, value, mono = true }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-2.5 border-b border-slate-100 last:border-0">
-      <span className="text-sm text-slate-500 shrink-0">{label}</span>
-      <span className={`text-sm text-slate-900 text-right break-all ${mono ? "font-mono" : ""}`}>{value}</span>
+    <div className="py-2.5 border-b border-slate-100 last:border-0">
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className={`text-sm text-slate-900 break-all mt-0.5 ${mono ? "font-mono" : ""}`}>{value}</p>
     </div>
   );
 }
@@ -23,7 +23,7 @@ export default async function SettingsPage() {
   const secretSet = Boolean(process.env.GOWA_WEBHOOK_SECRET);
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-slate-900">Settings</h2>
         <p className="text-sm text-slate-500">Info koneksi untuk Gowa & landing page.</p>
