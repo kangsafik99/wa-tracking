@@ -7,7 +7,8 @@ import { buildWaLabelMap, resolveWaLabel } from "@/lib/export/destinations";
 import { FunnelChart } from "@/components/FunnelChart";
 import { Card } from "@/components/ui/Card";
 import { TrafficToggle } from "@/components/TrafficToggle";
-import type { LeadStatus } from "@prisma/client";
+import { WaFilterSelect } from "@/components/WaFilterSelect";
+import type { LeadStatus, Prisma } from "@prisma/client";
 
 function StatCard({
   label,
@@ -37,37 +38,52 @@ function StatCard({
 export default async function OverviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ traffic?: string }>;
+  searchParams: Promise<{ traffic?: string; wa?: string }>;
 }) {
   const sp = await searchParams;
   const traffic = parseTrafficFilter(sp.traffic);
-  const where = leadTrafficWhere(traffic);
+  const waFilter = sp.wa?.trim();
 
-  const [statusGroups, purchaseAgg, sourceGroups, waGroups, destinations, totalLeads] = await Promise.all([
-    prisma.lead.groupBy({ where, by: ["status"], _count: { _all: true } }),
-    prisma.lead.aggregate({
-      where: { ...where, status: "PURCHASE" },
-      _sum: { totalValue: true },
-      _count: { _all: true },
-    }),
-    prisma.lead.groupBy({
-      where,
-      by: ["utmSource"],
-      _count: { _all: true },
-      orderBy: { _count: { utmSource: "desc" } },
-      take: 8,
-    }),
-    prisma.lead.groupBy({
-      where: { ...where, waDeviceId: { not: null } },
-      by: ["waDeviceId"],
-      _count: { _all: true },
-      orderBy: { _count: { waDeviceId: "desc" } },
-    }),
-    prisma.exportDestination.findMany({ select: { name: true, waNumbers: true } }),
-    prisma.lead.count({ where }),
-  ]);
+  const where: Prisma.LeadWhereInput = { ...leadTrafficWhere(traffic) };
+  if (waFilter) where.waDeviceId = waFilter;
+
+  const [statusGroups, purchaseAgg, sourceGroups, waGroups, allWaGroups, destinations, totalLeads] =
+    await Promise.all([
+      prisma.lead.groupBy({ where, by: ["status"], _count: { _all: true } }),
+      prisma.lead.aggregate({
+        where: { ...where, status: "PURCHASE" },
+        _sum: { totalValue: true },
+        _count: { _all: true },
+      }),
+      prisma.lead.groupBy({
+        where,
+        by: ["utmSource"],
+        _count: { _all: true },
+        orderBy: { _count: { utmSource: "desc" } },
+        take: 8,
+      }),
+      prisma.lead.groupBy({
+        where: { ...where, waDeviceId: { not: null } },
+        by: ["waDeviceId"],
+        _count: { _all: true },
+        orderBy: { _count: { waDeviceId: "desc" } },
+      }),
+      // Daftar pilihan dropdown - sengaja tidak ikut difilter wa (biar semua
+      // opsi tetap kelihatan), tapi tetap ikut filter Iklan/Organik.
+      prisma.lead.groupBy({
+        where: { ...leadTrafficWhere(traffic), waDeviceId: { not: null } },
+        by: ["waDeviceId"],
+        _count: { _all: true },
+        orderBy: { _count: { waDeviceId: "desc" } },
+      }),
+      prisma.exportDestination.findMany({ select: { name: true, waNumbers: true } }),
+      prisma.lead.count({ where }),
+    ]);
 
   const waLabelMap = buildWaLabelMap(destinations);
+  const waSelectOptions = allWaGroups
+    .filter((g): g is typeof g & { waDeviceId: string } => Boolean(g.waDeviceId))
+    .map((g) => ({ value: g.waDeviceId, label: resolveWaLabel(g.waDeviceId, waLabelMap), count: g._count._all }));
 
   const countByStatus = new Map<LeadStatus, number>();
   for (const g of statusGroups) countByStatus.set(g.status, g._count._all);
@@ -90,14 +106,31 @@ export default async function OverviewPage({
   const maxSourceCount = Math.max(1, ...sourceGroups.map((g) => g._count._all));
   const maxWaCount = Math.max(1, ...waGroups.map((g) => g._count._all));
 
+  function buildHref(overrides: { traffic?: string; wa?: string }) {
+    const params = new URLSearchParams();
+    const merged = { traffic: sp.traffic, wa: sp.wa, ...overrides };
+    for (const [k, v] of Object.entries(merged)) if (v) params.set(k, v);
+    const qs = params.toString();
+    return qs ? `/?${qs}` : "/";
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl font-semibold text-slate-900">Overview</h2>
           <p className="text-sm text-slate-500">Ringkasan funnel lead WhatsApp Anda.</p>
         </div>
-        <TrafficToggle current={traffic} buildHref={(v) => `/?traffic=${v}`} />
+        <div className="flex items-center gap-3 flex-wrap">
+          {waSelectOptions.length >= 1 && (
+            <WaFilterSelect
+              current={waFilter || ""}
+              options={waSelectOptions}
+              buildHref={(v) => buildHref({ wa: v || undefined })}
+            />
+          )}
+          <TrafficToggle current={traffic} buildHref={(v) => buildHref({ traffic: v === "all" ? undefined : v })} />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
