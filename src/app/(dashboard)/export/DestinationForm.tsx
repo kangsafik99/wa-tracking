@@ -89,8 +89,8 @@ export function DestinationForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4 border border-slate-200 rounded-xl p-4 bg-slate-50">
-      <div className="grid grid-cols-2 gap-4">
+    <form onSubmit={submit} className="space-y-4 border border-slate-200 rounded-2xl p-4 bg-slate-50">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label>Nama</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} required placeholder="mis. Meta - Brand A" />
@@ -149,7 +149,7 @@ export function DestinationForm({
       </div>
 
       {platform === "META" && (
-        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200">
           <div>
             <Label>Dataset ID</Label>
             <Input value={metaDatasetId} onChange={(e) => setMetaDatasetId(e.target.value)} className="font-mono" />
@@ -176,7 +176,7 @@ export function DestinationForm({
       )}
 
       {platform === "TIKTOK" && (
-        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200">
           <div>
             <Label>Pixel Code</Label>
             <Input value={tiktokPixelCode} onChange={(e) => setTiktokPixelCode(e.target.value)} className="font-mono" />
@@ -212,7 +212,7 @@ export function DestinationForm({
             <p className="text-xs font-mono text-amber-900 break-all mt-1">{redirectUri || "..."}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Client ID</Label>
               <Input value={googleClientId} onChange={(e) => setGoogleClientId(e.target.value)} className="font-mono" />
@@ -268,7 +268,7 @@ export function DestinationForm({
               Resource name Conversion Action per status (buat dulu di Google Ads UI, format{" "}
               <span className="font-mono">customers/123.../conversionActions/456...</span>).
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {STATUS_LABELS_FOR_GOOGLE.map((s) => (
                 <div key={s.key}>
                   <Label>{s.label}</Label>

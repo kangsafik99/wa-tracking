@@ -43,7 +43,7 @@ export function EditLeadForm({ leadId, initial }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Nama" value={form.name} onChange={(v) => set("name", v)} />
         <Field label="No HP" value={form.phone} onChange={(v) => set("phone", v)} mono />
         <Field label="Email" value={form.email} onChange={(v) => set("email", v)} />

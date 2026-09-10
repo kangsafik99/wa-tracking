@@ -92,7 +92,7 @@ export default async function LeadsPage({
 
       <form className="flex flex-wrap gap-3 items-end" action="/leads" method="GET">
         <input type="hidden" name="traffic" value={traffic} />
-        <div>
+        <div className="w-full sm:w-64">
           <Label htmlFor="leads-search">Cari</Label>
           <div className="relative">
             <MagnifyingGlass size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -102,14 +102,14 @@ export default async function LeadsPage({
               name="q"
               defaultValue={sp.q || ""}
               placeholder="Voucher, nama, no HP, email"
-              className="w-64 pl-9"
+              className="pl-9"
             />
           </div>
         </div>
-        <div>
+        <div className="flex-1 min-w-[8rem] sm:flex-none sm:w-44">
           <Label>Status</Label>
           <Select name="status" defaultValue={status || "ALL"}>
-            <SelectTrigger className="w-44">
+            <SelectTrigger>
               <SelectValue>{status ? STATUS_LABEL[status] : "Semua"}</SelectValue>
             </SelectTrigger>
             <SelectContent>

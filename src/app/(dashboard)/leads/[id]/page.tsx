@@ -30,9 +30,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         Leads
       </Link>
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-900">{lead.name || "Tanpa nama"}</h2>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="min-w-0">
+          <h2 className="text-xl font-semibold text-slate-900 break-words">{lead.name || "Tanpa nama"}</h2>
           <p className="text-sm text-slate-500 mt-1">
             Dibuat {formatDate(lead.createdAt)} &middot; Source {lead.source} &middot; Status saat ini{" "}
             {STATUS_LABEL[lead.status]}
@@ -58,7 +58,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
       <Card>
         <CardTitle className="mb-4">Atribusi & Click ID</CardTitle>
-        <dl className="grid grid-cols-2 gap-4 text-sm">
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
             <dt className="text-xs text-slate-400 mb-0.5">Voucher Code</dt>
             <dd className="font-mono text-slate-900">{lead.voucherCode || "—"}</dd>

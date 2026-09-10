@@ -2,31 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  SquaresFour,
-  Users,
-  ChatCircleText,
-  GearSix,
-  SignOut,
-  ChatCircleDots,
-  PaperPlaneTilt,
-} from "@phosphor-icons/react/ssr";
+import { ChatCircleDots, SignOut } from "@phosphor-icons/react/ssr";
 import { logoutAction } from "@/app/(dashboard)/actions";
+import { NAV_ITEMS } from "@/components/nav-items";
 import { cn } from "@/lib/cn";
-
-const NAV_ITEMS = [
-  { href: "/", label: "Overview", icon: SquaresFour },
-  { href: "/leads", label: "Leads", icon: Users },
-  { href: "/export", label: "Export", icon: PaperPlaneTilt },
-  { href: "/logs", label: "Webhook Log", icon: ChatCircleText },
-  { href: "/settings", label: "Settings", icon: GearSix },
-];
 
 export function Sidebar({ email }: { email: string }) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 shrink-0 border-r border-slate-200 bg-white min-h-screen flex flex-col">
+    <aside className="hidden lg:flex w-64 shrink-0 border-r border-slate-200 bg-white min-h-screen flex-col">
       <div className="px-5 py-5 border-b border-slate-200 flex items-center gap-2.5">
         <div className="grid place-items-center w-8 h-8 rounded-lg bg-brand-600 text-white">
           <ChatCircleDots size={18} weight="fill" />
