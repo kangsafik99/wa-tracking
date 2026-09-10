@@ -24,6 +24,10 @@ Klik iklan → Landing Page (voucher code) → POST /api/leads (Pending Lead)
   Iklan/Organik (best-effort dari teks hasil proses) dan **auto-cleanup** setelah masa retensi.
 - **Settings** — info URL webhook Gowa & endpoint landing page, **generator snippet capture siap
   copy-paste** untuk landing page Anda, konfigurasi prefix voucher, dan health check.
+- **Export** — kirim event Contact/Qualified/Booking/Purchase ke **Meta CAPI**, **TikTok Events API**
+  (otomatis berkala + tombol kirim manual), dan **Google Ads** (CSV siap upload). Destination
+  (Dataset ID/Access Token/dst) dikelola langsung dari dashboard, bukan env var — siap multi-akun
+  tanpa redeploy. Lihat [Export Layer](#export-layer-meta-capi--tiktok-events-api--google-ads).
 - **`/test-lp`** — halaman publik (tanpa login) untuk simulasi landing page + uji coba alur end-to-end
   tanpa perlu website asli. Lihat [Uji Coba End-to-End](#uji-coba-end-to-end).
 
@@ -82,6 +86,7 @@ Opsional (sudah punya default yang masuk akal):
 | `ALLOWED_ORIGIN` | `*` | Origin yang diizinkan panggil `POST /api/leads` dari browser (CORS) |
 | `APP_URL` | (auto dari request host) | URL publik aplikasi, dipakai di halaman Settings |
 | `WEBHOOK_LOG_RETENTION_DAYS` | `30` | Berapa hari Webhook Log disimpan sebelum otomatis dihapus |
+| `EXPORT_INTERVAL_MINUTES` | `15` | Interval pengiriman otomatis ke Meta/TikTok (kredensial diatur di menu Export, bukan di sini) |
 
 ## Deploy ke EasyPanel
 
@@ -178,15 +183,49 @@ curl -X POST https://domain-dashboard-anda/api/leads \
 
 Lalu cek di dashboard → Leads, harus muncul baris baru status "New Lead".
 
-## Yang BELUM termasuk di v1 ini (lingkup disepakati: Core dulu)
+## Export Layer: Meta CAPI / TikTok Events API / Google Ads
 
-Sesuai lingkup yang dipilih, hal-hal berikut dari ebook **belum** diimplementasikan dan bisa
-ditambahkan menyusul:
+Menu **Export** di dashboard mengirim status Contact/Qualified Lead/Booking/Purchase sebagai event
+konversi server-side ke platform iklan (Ebook Bagian 5) — inilah yang menutup loop "SINYAL": algoritma
+iklan belajar dari pelanggan sungguhan, bukan cuma klik.
+
+**Konsep "Destination"**: karena click ID bersifat *account-scoped* (Ebook 1.2 — gclid/fbclid/ttclid
+dari satu Ad Account tidak dikenali akun lain), tiap Ad Account/brand butuh kredensial ekspor sendiri.
+Destination dikelola dari dashboard (bukan env var) supaya bisa tambah/edit akun kapan saja tanpa
+redeploy. Tiap destination dipetakan ke satu/lebih **prefix voucher** (mis. `BT-` → Akun A, `RB-` →
+Akun B); satu destination bisa ditandai **default** sebagai fallback untuk lead tanpa voucher (CTWA,
+orphan capture).
+
+| Platform | Cara kerja | Kredensial yang dibutuhkan |
+|---|---|---|
+| **Meta CAPI** | Push otomatis (server-side POST), `src/lib/export/meta.ts` | Dataset ID + Access Token dari Events Manager |
+| **TikTok Events API** | Push otomatis, `src/lib/export/tiktok.ts` | Pixel Code + Access Token dari TikTok Ads Manager |
+| **Google Ads** | **CSV export manual/terjadwal**, bukan push API — lihat catatan di bawah | Tidak perlu kredensial API |
+
+Langkah pakai:
+
+1. Login ke dashboard → menu **Export** → **Tambah Destination** → pilih platform, isi kredensial,
+   isi prefix voucher (atau tandai sebagai default).
+2. Meta & TikTok terkirim **otomatis tiap `EXPORT_INTERVAL_MINUTES` menit** di background
+   (`src/instrumentation.ts` — proses interval di dalam container, tidak perlu cron job EasyPanel).
+   Tombol **"Kirim Sekarang"** di halaman Export untuk memicu manual/testing.
+3. Setiap event dikirim sekali per (destination, lead, nama event) — dedup lewat tabel `ExportLog`,
+   jadi aman dijalankan berkali-kali tanpa dobel kirim.
+4. No HP & `external_id` di-hash SHA-256 sebelum dikirim (`src/lib/hash.ts`), sesuai Aturan Emas privasi
+   Ebook 1.6. Click ID (`ctwa_clid`, `fbc`, `fbp`, `ttclid`) dikirim apa adanya.
+
+**Kenapa Google beda (CSV, bukan API)**: mengirim konversi otomatis ke Google Ads butuh Google Ads API,
+yang mensyaratkan OAuth (Client ID/Secret) + **Developer Token** yang harus diajukan & disetujui Google
+— prosesnya bisa berhari-hari dan cukup teknis. Untuk v1, destination Google cukup men-generate file
+CSV (kolom Google Click ID/Conversion Name/Time/Value/Currency, format persis seperti yang diminta
+Google Ads Uploads — Ebook 5.2) yang Anda unggah manual/terjadwal sendiri di Google Ads UI
+(**Tools & Settings → Conversions → Uploads**). Kalau nanti berhasil dapat Developer Token, integrasi
+API penuh bisa dibangun menyusul di atas struktur Destination yang sama.
+
+## Yang BELUM termasuk di v1 ini
 
 - **Sinkronisasi Order/POS otomatis** (Bonus 02) — untuk sekarang, update status ke Booking/Purchase +
   nilai transaksi dilakukan manual lewat halaman **Leads → Detail** di dashboard.
-- **Export ke Meta CAPI / Google OCI / TikTok Events API** (Bonus 04 & Bagian 5) — belum ada cron job
-  pengiriman konversi server-side ke platform iklan.
+- **Google Ads API penuh** (lihat catatan di atas) — CSV export manual sudah tersedia sebagai gantinya.
 
-Kabari saja kalau salah satu mau dibangun — strukturnya (model `Lead` dengan semua click ID sudah
-tersimpan) sudah siap dipakai untuk fase itu tanpa perlu migrasi skema besar.
+Kabari saja kalau mau dibangun.

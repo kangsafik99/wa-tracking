@@ -77,3 +77,63 @@ model WebhookLog {
 
   @@index([createdAt])
 }
+
+enum ExportPlatform {
+  META
+  TIKTOK
+  GOOGLE_CSV
+}
+
+// Tujuan pengiriman konversi server-side (Ebook SINYAL Bagian 5). Dikelola dari
+// dashboard (bukan env var statis) supaya siap multi-akun tanpa redeploy -
+// klik ID bersifat account-scoped (Ebook 1.2), jadi tiap Ad Account/brand butuh
+// destination sendiri, dipetakan lewat prefix voucher (Ebook 3.5, 5.2).
+model ExportDestination {
+  id       String         @id @default(cuid())
+  name     String
+  platform ExportPlatform
+  active   Boolean        @default(true)
+
+  // Lead di-route ke sini kalau voucherCode-nya diawali salah satu prefix ini.
+  // isDefault = fallback untuk lead yang tidak cocok prefix manapun di platform
+  // ini (mis. CTWA/orphan tanpa voucher).
+  voucherPrefixes String[]
+  isDefault       Boolean  @default(false)
+
+  // Meta CAPI
+  metaDatasetId     String?
+  metaAccessToken   String?
+  metaTestEventCode String?
+
+  // TikTok Events API
+  tiktokPixelCode    String?
+  tiktokAccessToken  String?
+  tiktokTestEventCode String?
+
+  // Google CSV: nama Conversion Action per status, harus persis sama dengan
+  // yang dibuat di Google Ads UI (Ebook 5.2). Contoh: {"CONTACT":"Contact"}
+  googleConversionNames Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  logs ExportLog[]
+
+  @@index([platform])
+}
+
+// Audit trail pengiriman - setara "Meta Sync Log" di ebook, sekaligus dipakai
+// untuk dedup (jangan kirim event yang sama dua kali ke destination yang sama).
+model ExportLog {
+  id            String            @id @default(cuid())
+  destinationId String
+  destination   ExportDestination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  leadId        String
+  eventName     String
+  status        String // "success" | "error"
+  responseBody  String?
+  createdAt     DateTime          @default(now())
+
+  @@index([destinationId, leadId, eventName])
+  @@index([createdAt])
+}
