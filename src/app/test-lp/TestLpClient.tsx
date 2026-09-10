@@ -81,6 +81,10 @@ export function TestLpClient() {
         utm_source: cap.utm_source,
         utm_medium: cap.utm_medium,
       }),
+      // Wajib: tanpa ini, klik "Chat via WhatsApp" bisa membatalkan request
+      // sebelum selesai (browser pindah ke app WhatsApp/unload halaman) -
+      // voucher kelihatan di pesan WA tapi tidak pernah tercatat sebagai lead.
+      keepalive: true,
     })
       .then((r) => r.json())
       .then((data) => setApiResult(data))
@@ -197,7 +201,12 @@ export function TestLpClient() {
           </p>
         </Card>
 
-        {waHref ? (
+        {sending ? (
+          <Button disabled className="w-full">
+            <WhatsappLogo size={18} weight="fill" />
+            Menyiapkan pending lead, tunggu sebentar...
+          </Button>
+        ) : waHref ? (
           <a
             href={waHref}
             target="_blank"
