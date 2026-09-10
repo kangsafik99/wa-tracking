@@ -15,7 +15,7 @@ export default async function LoginPage({
           <div className="grid place-items-center w-11 h-11 rounded-xl bg-brand-600 text-white mb-4">
             <ChatCircleDots size={22} weight="fill" />
           </div>
-          <h1 className="text-lg font-semibold text-slate-900">SINYAL CRM</h1>
+          <h1 className="text-lg font-semibold text-slate-900">WA TRACKING</h1>
           <p className="text-sm text-slate-500 mt-1">Masuk untuk mengakses dashboard</p>
         </div>
         <div className="bg-white rounded-2xl shadow-card border border-slate-200 p-7">

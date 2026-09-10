@@ -4,7 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SINYAL CRM",
+  title: "WA TRACKING",
   description: "Dashboard offline conversion tracking WhatsApp",
 };
 

@@ -29,7 +29,7 @@ export function Sidebar({ email }: { email: string }) {
           <ChatCircleDots size={18} weight="fill" />
         </div>
         <div>
-          <h1 className="text-sm font-semibold text-slate-900 leading-tight">SINYAL CRM</h1>
+          <h1 className="text-sm font-semibold text-slate-900 leading-tight">WA TRACKING</h1>
           <p className="text-[11px] text-slate-400 leading-tight">Offline Conversion Tracking</p>
         </div>
       </div>

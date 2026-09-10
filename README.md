@@ -1,4 +1,4 @@
-# SINYAL CRM — Dashboard Offline Conversion Tracking
+# WA TRACKING — Dashboard Offline Conversion Tracking
 
 Pengganti "Google Sheet + Apps Script + WatZap" dari ebook **SINYAL** (Yoppy Pras), dibangun sebagai
 satu aplikasi web (Next.js + PostgreSQL) yang di-deploy di EasyPanel dan menerima webhook dari
