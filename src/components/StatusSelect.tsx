@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CaretDown } from "@phosphor-icons/react/ssr";
 import { updateLeadStatusAction } from "@/app/(dashboard)/leads/actions";
 import { STATUS_LABEL } from "@/lib/leads";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { cn } from "@/lib/cn";
 import type { LeadStatus } from "@prisma/client";
 
 const OPTIONS: LeadStatus[] = [
@@ -31,15 +32,16 @@ export function StatusSelect({ leadId, status }: { leadId: string; status: LeadS
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  function handleChange(next: LeadStatus) {
+  function handleChange(next: string) {
     setError(null);
+    const nextStatus = next as LeadStatus;
     startTransition(async () => {
-      const res = await updateLeadStatusAction(leadId, next);
+      const res = await updateLeadStatusAction(leadId, nextStatus);
       if (res.error) {
         setError(res.error);
         return;
       }
-      setCurrent(next);
+      setCurrent(nextStatus);
     });
   }
 
@@ -47,22 +49,27 @@ export function StatusSelect({ leadId, status }: { leadId: string; status: LeadS
 
   return (
     <div>
-      <div className={`relative inline-flex items-center rounded-full ${style.badge} ${pending ? "opacity-60" : ""}`}>
-        <span className={`w-1.5 h-1.5 rounded-full ml-2.5 shrink-0 ${style.dot}`} />
-        <select
-          value={current}
-          disabled={pending}
-          onChange={(e) => handleChange(e.target.value as LeadStatus)}
-          className="appearance-none bg-transparent text-xs font-medium pl-1.5 pr-6 py-1 cursor-pointer focus:outline-none disabled:cursor-default"
+      <Select value={current} onValueChange={handleChange} disabled={pending}>
+        <SelectTrigger
+          className={cn(
+            "w-auto gap-1.5 rounded-full border-0 py-1 pl-2.5 pr-2 text-xs font-medium",
+            style.badge,
+            pending && "opacity-60"
+          )}
         >
+          <span className="flex items-center gap-1.5">
+            <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", style.dot)} />
+            <SelectValue>{STATUS_LABEL[current]}</SelectValue>
+          </span>
+        </SelectTrigger>
+        <SelectContent>
           {OPTIONS.map((o) => (
-            <option key={o} value={o}>
+            <SelectItem key={o} value={o}>
               {STATUS_LABEL[o]}
-            </option>
+            </SelectItem>
           ))}
-        </select>
-        <CaretDown size={11} weight="bold" className="absolute right-2 pointer-events-none" />
-      </div>
+        </SelectContent>
+      </Select>
       {error && <p className="text-[11px] text-red-600 mt-1 max-w-[180px]">{error}</p>}
     </div>
   );

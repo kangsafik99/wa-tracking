@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { CopySimple, CheckCircle } from "@phosphor-icons/react/ssr";
 import { buildLpSnippet } from "@/lib/lp-snippet";
 import { Card, CardTitle } from "@/components/ui/Card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 
 export function LpSnippetCard({ apiUrl, prefixes }: { apiUrl: string; prefixes: string[] }) {
   const [prefix, setPrefix] = useState(prefixes[0] || "BT");
@@ -28,17 +29,18 @@ export function LpSnippetCard({ apiUrl, prefixes }: { apiUrl: string; prefixes: 
         {prefixes.length > 1 && (
           <div className="flex items-center gap-2">
             <label className="text-xs text-slate-500">Prefix voucher</label>
-            <select
-              value={prefix}
-              onChange={(e) => setPrefix(e.target.value)}
-              className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              {prefixes.map((p) => (
-                <option key={p} value={p}>
-                  {p}-
-                </option>
-              ))}
-            </select>
+            <Select value={prefix} onValueChange={setPrefix}>
+              <SelectTrigger className="w-auto py-1 text-xs font-mono">
+                <SelectValue>{prefix}-</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {prefixes.map((p) => (
+                  <SelectItem key={p} value={p} className="font-mono">
+                    {p}-
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
       </div>
@@ -68,7 +70,7 @@ export function LpSnippetCard({ apiUrl, prefixes }: { apiUrl: string; prefixes: 
         />
         <button
           onClick={copy}
-          className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-2.5 py-1.5 transition"
+          className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-2.5 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
         >
           {copied ? (
             <>

@@ -4,6 +4,9 @@ import { useState, useTransition } from "react";
 import { CircleNotch, CheckCircle, GoogleLogo } from "@phosphor-icons/react/ssr";
 import { saveDestinationAction, type DestinationInput } from "./actions";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import type { SafeExportDestination } from "@/lib/export/types";
 import type { ExportPlatform } from "@prisma/client";
 
@@ -13,6 +16,12 @@ const STATUS_LABELS_FOR_GOOGLE: { key: string; label: string }[] = [
   { key: "BOOKING", label: "InitiateCheckout" },
   { key: "PURCHASE", label: "Purchase" },
 ];
+
+const PLATFORM_LABEL: Record<ExportPlatform, string> = {
+  META: "Meta CAPI",
+  TIKTOK: "TikTok Events API",
+  GOOGLE: "Google Ads API",
+};
 
 export function DestinationForm({
   initial,
@@ -83,50 +92,58 @@ export function DestinationForm({
     <form onSubmit={submit} className="space-y-4 border border-slate-200 rounded-xl p-4 bg-slate-50">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">Nama</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            placeholder="mis. Meta - Brand A"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-          />
+          <Label>Nama</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} required placeholder="mis. Meta - Brand A" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">Platform</label>
-          <select
+          <Label>Platform</Label>
+          <Select
             value={platform}
-            onChange={(e) => setPlatform(e.target.value as ExportPlatform)}
+            onValueChange={(v) => setPlatform(v as ExportPlatform)}
             disabled={Boolean(initial)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-slate-100"
           >
-            <option value="META">Meta CAPI</option>
-            <option value="TIKTOK">TikTok Events API</option>
-            <option value="GOOGLE">Google Ads API</option>
-          </select>
+            <SelectTrigger>
+              <SelectValue>{PLATFORM_LABEL[platform]}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="META">Meta CAPI</SelectItem>
+              <SelectItem value="TIKTOK">TikTok Events API</SelectItem>
+              <SelectItem value="GOOGLE">Google Ads API</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-slate-500 mb-1.5">
+        <Label>
           Prefix voucher (pisahkan koma, mis. <span className="font-mono">BT, RB</span>)
-        </label>
-        <input
+        </Label>
+        <Input
           value={voucherPrefixes}
           onChange={(e) => setVoucherPrefixes(e.target.value)}
           disabled={isDefault}
           placeholder="BT, RB"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-slate-100"
+          className="font-mono"
         />
       </div>
 
       <div className="flex items-center gap-5">
         <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={active}
+            onChange={(e) => setActive(e.target.checked)}
+            className="accent-brand-600"
+          />
           Aktif
         </label>
         <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={isDefault}
+            onChange={(e) => setIsDefault(e.target.checked)}
+            className="accent-brand-600"
+          />
           Jadikan default (fallback untuk lead tanpa prefix cocok, mis. CTWA)
         </label>
       </div>
@@ -134,34 +151,26 @@ export function DestinationForm({
       {platform === "META" && (
         <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Dataset ID</label>
-            <input
-              value={metaDatasetId}
-              onChange={(e) => setMetaDatasetId(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
+            <Label>Dataset ID</Label>
+            <Input value={metaDatasetId} onChange={(e) => setMetaDatasetId(e.target.value)} className="font-mono" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">
+            <Label>
               Access Token {initial && <span className="text-slate-400">(kosongkan jika tidak ganti)</span>}
-            </label>
-            <input
+            </Label>
+            <Input
               type="password"
               value={metaAccessToken}
               onChange={(e) => setMetaAccessToken(e.target.value)}
               placeholder={initial ? "••••••••" : ""}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="font-mono"
             />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">
+            <Label>
               Test Event Code <span className="text-slate-400">(opsional, buat testing di Events Manager)</span>
-            </label>
-            <input
-              value={metaTestEventCode}
-              onChange={(e) => setMetaTestEventCode(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
+            </Label>
+            <Input value={metaTestEventCode} onChange={(e) => setMetaTestEventCode(e.target.value)} className="font-mono" />
           </div>
         </div>
       )}
@@ -169,34 +178,26 @@ export function DestinationForm({
       {platform === "TIKTOK" && (
         <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Pixel Code</label>
-            <input
-              value={tiktokPixelCode}
-              onChange={(e) => setTiktokPixelCode(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
+            <Label>Pixel Code</Label>
+            <Input value={tiktokPixelCode} onChange={(e) => setTiktokPixelCode(e.target.value)} className="font-mono" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">
+            <Label>
               Access Token {initial && <span className="text-slate-400">(kosongkan jika tidak ganti)</span>}
-            </label>
-            <input
+            </Label>
+            <Input
               type="password"
               value={tiktokAccessToken}
               onChange={(e) => setTiktokAccessToken(e.target.value)}
               placeholder={initial ? "••••••••" : ""}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="font-mono"
             />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">
+            <Label>
               Test Event Code <span className="text-slate-400">(opsional, buat testing di Events Manager)</span>
-            </label>
-            <input
-              value={tiktokTestEventCode}
-              onChange={(e) => setTiktokTestEventCode(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
+            </Label>
+            <Input value={tiktokTestEventCode} onChange={(e) => setTiktokTestEventCode(e.target.value)} className="font-mono" />
           </div>
         </div>
       )}
@@ -213,55 +214,51 @@ export function DestinationForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">Client ID</label>
-              <input
-                value={googleClientId}
-                onChange={(e) => setGoogleClientId(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
+              <Label>Client ID</Label>
+              <Input value={googleClientId} onChange={(e) => setGoogleClientId(e.target.value)} className="font-mono" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">
+              <Label>
                 Client Secret {initial && <span className="text-slate-400">(kosongkan jika tidak ganti)</span>}
-              </label>
-              <input
+              </Label>
+              <Input
                 type="password"
                 value={googleClientSecret}
                 onChange={(e) => setGoogleClientSecret(e.target.value)}
                 placeholder={initial ? "••••••••" : ""}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="font-mono"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">
+              <Label>
                 Developer Token {initial && <span className="text-slate-400">(kosongkan jika tidak ganti)</span>}
-              </label>
-              <input
+              </Label>
+              <Input
                 type="password"
                 value={googleDeveloperToken}
                 onChange={(e) => setGoogleDeveloperToken(e.target.value)}
                 placeholder={initial ? "••••••••" : ""}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="font-mono"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">Customer ID (akun Ads tujuan)</label>
-              <input
+              <Label>Customer ID (akun Ads tujuan)</Label>
+              <Input
                 value={googleCustomerId}
                 onChange={(e) => setGoogleCustomerId(e.target.value)}
                 placeholder="1234567890"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="font-mono"
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">
+              <Label>
                 Login Customer ID (MCC) <span className="text-slate-400">(opsional, kalau dikelola lewat akun manager)</span>
-              </label>
-              <input
+              </Label>
+              <Input
                 value={googleLoginCustomerId}
                 onChange={(e) => setGoogleLoginCustomerId(e.target.value)}
                 placeholder="1234567890"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="font-mono"
               />
             </div>
           </div>
@@ -274,12 +271,12 @@ export function DestinationForm({
             <div className="grid grid-cols-2 gap-3">
               {STATUS_LABELS_FOR_GOOGLE.map((s) => (
                 <div key={s.key}>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">{s.label}</label>
-                  <input
+                  <Label>{s.label}</Label>
+                  <Input
                     value={googleActions[s.key] || ""}
                     onChange={(e) => setGoogleActions((g) => ({ ...g, [s.key]: e.target.value }))}
                     placeholder="customers/.../conversionActions/..."
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="text-xs font-mono"
                   />
                 </div>
               ))}

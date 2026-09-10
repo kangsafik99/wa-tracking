@@ -10,13 +10,7 @@ export function Card({
   padded?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-2xl border border-slate-200 bg-white shadow-card",
-        padded && "p-5",
-        className
-      )}
-    >
+    <div className={cn("rounded-2xl border border-slate-200 bg-white shadow-card", padded && "p-5", className)}>
       {children}
     </div>
   );

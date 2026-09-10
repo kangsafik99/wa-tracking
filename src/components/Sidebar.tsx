@@ -12,6 +12,7 @@ import {
   PaperPlaneTilt,
 } from "@phosphor-icons/react/ssr";
 import { logoutAction } from "@/app/(dashboard)/actions";
+import { cn } from "@/lib/cn";
 
 const NAV_ITEMS = [
   { href: "/", label: "Overview", icon: SquaresFour },
@@ -43,11 +44,10 @@ export function Sidebar({ email }: { email: string }) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                active
-                  ? "bg-brand-50 text-brand-700"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
+              className={cn(
+                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition",
+                active ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              )}
             >
               <Icon size={17} weight={active ? "fill" : "regular"} />
               {item.label}

@@ -44,7 +44,7 @@ export default async function LogsPage({
 
       <div className="space-y-2.5">
         {logs.map((log) => (
-          <details key={log.id} className="group rounded-xl border border-slate-200 bg-white shadow-card">
+          <details key={log.id} className="group rounded-2xl border border-slate-200 bg-white shadow-card">
             <summary className="cursor-pointer list-none px-4 py-3 flex items-center gap-3 text-sm">
               <CaretRight size={13} className="text-slate-400 transition group-open:rotate-90 shrink-0" />
               <span className="text-slate-400 font-mono text-xs whitespace-nowrap">{formatDate(log.createdAt)}</span>

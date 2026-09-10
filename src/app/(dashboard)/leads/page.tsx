@@ -8,6 +8,10 @@ import { parseTrafficFilter, leadTrafficWhere } from "@/lib/traffic";
 import { StatusSelect } from "@/components/StatusSelect";
 import { TrafficToggle } from "@/components/TrafficToggle";
 import { Button, buttonVariants } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import type { Lead, LeadStatus, Prisma } from "@prisma/client";
 
 const PAGE_SIZE = 25;
@@ -29,7 +33,8 @@ export default async function LeadsPage({
   searchParams: Promise<{ status?: string; q?: string; page?: string; traffic?: string }>;
 }) {
   const sp = await searchParams;
-  const status = sp.status as LeadStatus | undefined;
+  // "ALL" adalah sentinel buat opsi "Semua" - Radix Select tidak izinkan value="".
+  const status = sp.status && sp.status !== "ALL" ? (sp.status as LeadStatus) : undefined;
   const q = sp.q?.trim();
   const page = Math.max(1, Number(sp.page) || 1);
   const traffic = parseTrafficFilter(sp.traffic);
@@ -88,102 +93,98 @@ export default async function LeadsPage({
       <form className="flex flex-wrap gap-3 items-end" action="/leads" method="GET">
         <input type="hidden" name="traffic" value={traffic} />
         <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">Cari</label>
+          <Label htmlFor="leads-search">Cari</Label>
           <div className="relative">
             <MagnifyingGlass size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
+            <Input
+              id="leads-search"
               type="text"
               name="q"
               defaultValue={sp.q || ""}
               placeholder="Voucher, nama, no HP, email"
-              className="rounded-lg border border-slate-300 pl-9 pr-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+              className="w-64 pl-9"
             />
           </div>
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">Status</label>
-          <select
-            name="status"
-            defaultValue={sp.status || ""}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
-          >
-            <option value="">Semua</option>
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </select>
+          <Label>Status</Label>
+          <Select name="status" defaultValue={status || "ALL"}>
+            <SelectTrigger className="w-44">
+              <SelectValue>{status ? STATUS_LABEL[status] : "Semua"}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Semua</SelectItem>
+              {STATUS_OPTIONS.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <Button type="submit" variant="secondary">
           Filter
         </Button>
       </form>
 
-      <div className="rounded-2xl border border-slate-200 bg-white overflow-x-auto shadow-card">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 text-left">
-              <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Jam</th>
-              <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Voucher</th>
-              <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Nama</th>
-              <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">No HP</th>
-              <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Sumber</th>
-              <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Total</th>
-              <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Status</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {groups.map((group) => (
-              <Fragment key={group.key}>
-                <tr className="bg-slate-50">
-                  <td colSpan={COLUMN_COUNT} className="px-4 py-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      {group.label}
-                    </span>
-                    <span className="ml-2 text-xs text-slate-400">
-                      {group.items.length} lead
-                    </span>
-                  </td>
-                </tr>
-                {group.items.map((lead) => (
-                  <tr key={lead.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition">
-                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap font-mono text-xs">
-                      {formatTimeWIB(lead.createdAt)}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-700">{lead.voucherCode || "—"}</td>
-                    <td className="px-4 py-3 text-slate-900 font-medium">{lead.name || "—"}</td>
-                    <td className="px-4 py-3 text-slate-700 whitespace-nowrap font-mono text-xs">{lead.phone || "—"}</td>
-                    <td className="px-4 py-3 text-slate-500">{lead.utmSource || "—"}</td>
-                    <td className="px-4 py-3 text-slate-700 whitespace-nowrap font-mono text-xs">
-                      {lead.totalValue ? formatCurrency(Number(lead.totalValue)) : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusSelect leadId={lead.id} status={lead.status} />
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link href={`/leads/${lead.id}`} className="text-brand-700 hover:text-brand-800 hover:underline text-xs font-medium">
-                        Detail
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </Fragment>
-            ))}
-            {leads.length === 0 && (
-              <tr>
-                <td colSpan={COLUMN_COUNT} className="px-4 py-16 text-center text-slate-400">
-                  <div className="flex flex-col items-center gap-2">
-                    <UsersThree size={28} className="text-slate-300" />
-                    <span>Belum ada lead.</span>
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <TableHeader>
+          <TableRow className="border-slate-200 hover:bg-transparent">
+            <TableHead>Jam</TableHead>
+            <TableHead>Voucher</TableHead>
+            <TableHead>Nama</TableHead>
+            <TableHead>No HP</TableHead>
+            <TableHead>Sumber</TableHead>
+            <TableHead>Total</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {groups.map((group) => (
+            <Fragment key={group.key}>
+              <TableRow className="border-b-0 bg-slate-50 hover:bg-slate-50">
+                <TableCell colSpan={COLUMN_COUNT} className="py-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{group.label}</span>
+                  <span className="ml-2 text-xs text-slate-400">{group.items.length} lead</span>
+                </TableCell>
+              </TableRow>
+              {group.items.map((lead) => (
+                <TableRow key={lead.id}>
+                  <TableCell className="text-slate-500 whitespace-nowrap font-mono text-xs">
+                    {formatTimeWIB(lead.createdAt)}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-slate-700">{lead.voucherCode || "—"}</TableCell>
+                  <TableCell className="text-slate-900 font-medium">{lead.name || "—"}</TableCell>
+                  <TableCell className="text-slate-700 whitespace-nowrap font-mono text-xs">{lead.phone || "—"}</TableCell>
+                  <TableCell className="text-slate-500">{lead.utmSource || "—"}</TableCell>
+                  <TableCell className="text-slate-700 whitespace-nowrap font-mono text-xs">
+                    {lead.totalValue ? formatCurrency(Number(lead.totalValue)) : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <StatusSelect leadId={lead.id} status={lead.status} />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Link href={`/leads/${lead.id}`} className="text-brand-700 hover:text-brand-800 hover:underline text-xs font-medium">
+                      Detail
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </Fragment>
+          ))}
+          {leads.length === 0 && (
+            <TableRow className="hover:bg-transparent">
+              <TableCell colSpan={COLUMN_COUNT} className="py-16 text-center text-slate-400">
+                <div className="flex flex-col items-center gap-2">
+                  <UsersThree size={28} className="text-slate-300" />
+                  <span>Belum ada lead.</span>
+                </div>
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm">

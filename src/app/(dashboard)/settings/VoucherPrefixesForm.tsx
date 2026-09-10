@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { CheckCircle, CircleNotch } from "@phosphor-icons/react/ssr";
 import { updateVoucherPrefixesAction } from "./actions";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 
 export function VoucherPrefixesForm({ initial }: { initial: string[] }) {
   const [value, setValue] = useState(initial.join(", "));
@@ -28,17 +30,17 @@ export function VoucherPrefixesForm({ initial }: { initial: string[] }) {
 
   return (
     <form onSubmit={submit} className="space-y-2">
-      <label className="block text-xs font-medium text-slate-500 mb-1.5">
+      <Label>
         Prefix voucher (pisahkan koma, mis. <span className="font-mono">BT, RB, GM</span>)
-      </label>
+      </Label>
       <div className="flex items-center gap-2">
-        <input
+        <Input
           value={value}
           onChange={(e) => {
             setValue(e.target.value);
             setSaved(false);
           }}
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+          className="flex-1 font-mono"
         />
         <Button type="submit" size="sm" disabled={pending}>
           {pending && <CircleNotch size={14} className="animate-spin" />}

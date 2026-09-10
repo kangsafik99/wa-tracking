@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { CheckCircle, CircleNotch } from "@phosphor-icons/react/ssr";
 import { updateLeadFieldsAction } from "../actions";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { cn } from "@/lib/cn";
 
 type Props = {
   leadId: string;
@@ -54,8 +57,9 @@ export function EditLeadForm({ leadId, initial }: Props) {
         <Field label="Cabang" value={form.branch} onChange={(v) => set("branch", v)} />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-500 mb-1.5">Catatan</label>
+        <Label htmlFor="lead-notes">Catatan</Label>
         <textarea
+          id="lead-notes"
           value={form.notes}
           onChange={(e) => set("notes", e.target.value)}
           rows={3}
@@ -93,15 +97,8 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-slate-500 mb-1.5">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition ${
-          mono ? "font-mono" : ""
-        }`}
-      />
+      <Label>{label}</Label>
+      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} className={cn(mono && "font-mono")} />
     </div>
   );
 }

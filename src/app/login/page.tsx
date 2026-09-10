@@ -12,7 +12,7 @@ export default async function LoginPage({
     <div className="min-h-[100dvh] flex items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="grid place-items-center w-11 h-11 rounded-xl bg-brand-600 text-white mb-4">
+          <div className="grid place-items-center w-11 h-11 rounded-lg bg-brand-600 text-white mb-4">
             <ChatCircleDots size={22} weight="fill" />
           </div>
           <h1 className="text-lg font-semibold text-slate-900">WA TRACKING</h1>
