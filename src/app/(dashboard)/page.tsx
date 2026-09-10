@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { STATUS_LABEL, STATUS_RANK } from "@/lib/leads";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { parseTrafficFilter, leadTrafficWhere } from "@/lib/traffic";
+import { buildWaLabelMap, resolveWaLabel } from "@/lib/export/destinations";
 import { FunnelChart } from "@/components/FunnelChart";
 import { Card } from "@/components/ui/Card";
 import { TrafficToggle } from "@/components/TrafficToggle";
@@ -42,7 +43,7 @@ export default async function OverviewPage({
   const traffic = parseTrafficFilter(sp.traffic);
   const where = leadTrafficWhere(traffic);
 
-  const [statusGroups, purchaseAgg, sourceGroups, totalLeads] = await Promise.all([
+  const [statusGroups, purchaseAgg, sourceGroups, waGroups, destinations, totalLeads] = await Promise.all([
     prisma.lead.groupBy({ where, by: ["status"], _count: { _all: true } }),
     prisma.lead.aggregate({
       where: { ...where, status: "PURCHASE" },
@@ -56,8 +57,17 @@ export default async function OverviewPage({
       orderBy: { _count: { utmSource: "desc" } },
       take: 8,
     }),
+    prisma.lead.groupBy({
+      where: { ...where, waDeviceId: { not: null } },
+      by: ["waDeviceId"],
+      _count: { _all: true },
+      orderBy: { _count: { waDeviceId: "desc" } },
+    }),
+    prisma.exportDestination.findMany({ select: { name: true, waNumbers: true } }),
     prisma.lead.count({ where }),
   ]);
+
+  const waLabelMap = buildWaLabelMap(destinations);
 
   const countByStatus = new Map<LeadStatus, number>();
   for (const g of statusGroups) countByStatus.set(g.status, g._count._all);
@@ -78,6 +88,7 @@ export default async function OverviewPage({
   ).map((s) => ({ label: STATUS_LABEL[s], value: countByStatus.get(s) || 0 }));
 
   const maxSourceCount = Math.max(1, ...sourceGroups.map((g) => g._count._all));
+  const maxWaCount = Math.max(1, ...waGroups.map((g) => g._count._all));
 
   return (
     <div className="space-y-6">
@@ -135,6 +146,30 @@ export default async function OverviewPage({
           {sourceGroups.length === 0 && <p className="text-sm text-slate-400">Belum ada data.</p>}
         </div>
       </Card>
+
+      {waGroups.length > 1 && (
+        <Card>
+          <p className="text-sm font-medium text-slate-700 mb-4">Per Nomor WA</p>
+          <div className="space-y-3">
+            {waGroups.map((g) => (
+              <div key={g.waDeviceId} className="flex items-center gap-3 text-sm">
+                <span className="text-slate-600 w-32 shrink-0 truncate">
+                  {resolveWaLabel(g.waDeviceId, waLabelMap)}
+                </span>
+                <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-brand-500"
+                    style={{ width: `${(g._count._all / maxWaCount) * 100}%` }}
+                  />
+                </div>
+                <span className="font-mono tabular-nums font-medium text-slate-900 w-8 text-right shrink-0">
+                  {g._count._all}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

@@ -5,12 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { STATUS_LABEL } from "@/lib/leads";
 import { formatCurrency, formatTimeWIB, dateGroupKey, formatDateGroupLabel } from "@/lib/format";
 import { parseTrafficFilter, leadTrafficWhere } from "@/lib/traffic";
+import { buildWaLabelMap, resolveWaLabel } from "@/lib/export/destinations";
 import { StatusSelect } from "@/components/StatusSelect";
 import { TrafficToggle } from "@/components/TrafficToggle";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import type { Lead, LeadStatus, Prisma } from "@prisma/client";
 
 const PAGE_SIZE = 25;
+const COLUMN_COUNT = 9;
 
 const STATUS_OPTIONS: LeadStatus[] = [
   "NEW_LEAD",
@@ -25,16 +27,18 @@ const STATUS_OPTIONS: LeadStatus[] = [
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string; page?: string; traffic?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; page?: string; traffic?: string; wa?: string }>;
 }) {
   const sp = await searchParams;
   const status = sp.status as LeadStatus | undefined;
   const q = sp.q?.trim();
   const page = Math.max(1, Number(sp.page) || 1);
   const traffic = parseTrafficFilter(sp.traffic);
+  const wa = sp.wa?.trim();
 
   const where: Prisma.LeadWhereInput = { ...leadTrafficWhere(traffic) };
   if (status) where.status = status;
+  if (wa) where.waDeviceId = wa;
   if (q) {
     where.OR = [
       { voucherCode: { contains: q, mode: "insensitive" } },
@@ -44,7 +48,7 @@ export default async function LeadsPage({
     ];
   }
 
-  const [leads, total] = await Promise.all([
+  const [leads, total, destinations, waNumberGroups] = await Promise.all([
     prisma.lead.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -52,7 +56,15 @@ export default async function LeadsPage({
       take: PAGE_SIZE,
     }),
     prisma.lead.count({ where }),
+    prisma.exportDestination.findMany({ select: { name: true, waNumbers: true } }),
+    prisma.lead.groupBy({ by: ["waDeviceId"], where: { waDeviceId: { not: null } }, _count: { _all: true } }),
   ]);
+
+  const waLabelMap = buildWaLabelMap(destinations);
+  const waOptions = waNumberGroups
+    .filter((g): g is typeof g & { waDeviceId: string } => Boolean(g.waDeviceId))
+    .map((g) => ({ value: g.waDeviceId, label: resolveWaLabel(g.waDeviceId, waLabelMap), count: g._count._all }))
+    .sort((a, b) => b.count - a.count);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -69,7 +81,7 @@ export default async function LeadsPage({
 
   function pageHref(overrides: Record<string, string | undefined>) {
     const params = new URLSearchParams();
-    const merged = { status: sp.status, q: sp.q, page: sp.page, traffic: sp.traffic, ...overrides };
+    const merged = { status: sp.status, q: sp.q, page: sp.page, traffic: sp.traffic, wa: sp.wa, ...overrides };
     for (const [k, v] of Object.entries(merged)) if (v) params.set(k, v);
     return `/leads?${params.toString()}`;
   }
@@ -114,6 +126,23 @@ export default async function LeadsPage({
             ))}
           </select>
         </div>
+        {waOptions.length > 1 && (
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">Nomor WA</label>
+            <select
+              name="wa"
+              defaultValue={sp.wa || ""}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+            >
+              <option value="">Semua</option>
+              {waOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label} ({o.count})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <Button type="submit" variant="secondary">
           Filter
         </Button>
@@ -128,6 +157,7 @@ export default async function LeadsPage({
               <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Nama</th>
               <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">No HP</th>
               <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Sumber</th>
+              <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Nomor WA</th>
               <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Total</th>
               <th className="px-4 py-3 font-medium text-[11px] uppercase tracking-wide text-slate-400">Status</th>
               <th className="px-4 py-3"></th>
@@ -137,7 +167,7 @@ export default async function LeadsPage({
             {groups.map((group) => (
               <Fragment key={group.key}>
                 <tr className="bg-slate-50">
-                  <td colSpan={8} className="px-4 py-2">
+                  <td colSpan={COLUMN_COUNT} className="px-4 py-2">
                     <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                       {group.label}
                     </span>
@@ -155,6 +185,9 @@ export default async function LeadsPage({
                     <td className="px-4 py-3 text-slate-900 font-medium">{lead.name || "—"}</td>
                     <td className="px-4 py-3 text-slate-700 whitespace-nowrap font-mono text-xs">{lead.phone || "—"}</td>
                     <td className="px-4 py-3 text-slate-500">{lead.utmSource || "—"}</td>
+                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
+                      {resolveWaLabel(lead.waDeviceId, waLabelMap)}
+                    </td>
                     <td className="px-4 py-3 text-slate-700 whitespace-nowrap font-mono text-xs">
                       {lead.totalValue ? formatCurrency(Number(lead.totalValue)) : "—"}
                     </td>
@@ -172,7 +205,7 @@ export default async function LeadsPage({
             ))}
             {leads.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-16 text-center text-slate-400">
+                <td colSpan={COLUMN_COUNT} className="px-4 py-16 text-center text-slate-400">
                   <div className="flex flex-col items-center gap-2">
                     <UsersThree size={28} className="text-slate-300" />
                     <span>Belum ada lead.</span>

@@ -29,3 +29,23 @@ export function pickDestinationForLead(
 
   return destinations.find((d) => d.isDefault) || destinations[0] || null;
 }
+
+// Label ramah-baca untuk nomor WA di dashboard (Overview/Leads) - pakai nama
+// Destination yang sudah diisi admin (mis. "Meta - Brand A") kalau nomornya
+// terdaftar di sana, fallback ke nomor mentah kalau belum.
+export function buildWaLabelMap(
+  destinations: Pick<ExportDestination, "name" | "waNumbers">[]
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const d of destinations) {
+    for (const num of d.waNumbers) {
+      if (!map.has(num)) map.set(num, d.name);
+    }
+  }
+  return map;
+}
+
+export function resolveWaLabel(waDeviceId: string | null | undefined, labelMap: Map<string, string>): string {
+  if (!waDeviceId) return "-";
+  return labelMap.get(waDeviceId) || waDeviceId;
+}

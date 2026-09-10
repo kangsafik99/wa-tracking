@@ -36,6 +36,11 @@ click ID (`gclid`/`ttclid`/`fbclid`/`ctwaClid`); Organik = tidak ada sama sekali
 atribusi, klik Google Maps, direct, atau orphan capture dari chat) — sesuai prinsip Ebook SINYAL 1.7:
 jangan hitung trafik organik sebagai konversi iklan berbayar.
 
+**Bedakan lead per nomor WA (multi-akun/multi-brand)**: Overview (breakdown "Per Nomor WA", muncul
+otomatis kalau ada ≥2 nomor) dan Leads (kolom + filter "Nomor WA") menampilkan nama Destination yang
+sudah Anda isi di menu Export kalau nomornya terdaftar di sana, fallback ke nomor mentah kalau belum
+(`src/lib/export/destinations.ts` → `resolveWaLabel`).
+
 ## Stack
 
 - **Next.js 15** (App Router, TypeScript) — dashboard + API dalam satu aplikasi
