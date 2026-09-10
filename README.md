@@ -10,7 +10,7 @@ Alur closed-loop yang tetap sama seperti di ebook:
 Klik iklan → Landing Page (voucher code) → POST /api/leads (Pending Lead)
    → Chat WhatsApp berisi voucher → Gowa kirim webhook → POST /api/webhook/gowa
    → Match voucher → status Contact → CS update status manual di dashboard
-   → Qualified Lead → Booking → Purchase
+   → Lead → InitiateCheckout → Purchase
 ```
 
 ## Fitur Dashboard
@@ -24,7 +24,7 @@ Klik iklan → Landing Page (voucher code) → POST /api/leads (Pending Lead)
   Iklan/Organik (best-effort dari teks hasil proses) dan **auto-cleanup** setelah masa retensi.
 - **Settings** — info URL webhook Gowa & endpoint landing page, **generator snippet capture siap
   copy-paste** untuk landing page Anda, konfigurasi prefix voucher, dan health check.
-- **Export** — kirim event Contact/Qualified/Booking/Purchase ke **Meta CAPI**, **TikTok Events API**
+- **Export** — kirim event Contact/Lead/InitiateCheckout/Purchase ke **Meta CAPI**, **TikTok Events API**
   (otomatis berkala + tombol kirim manual), dan **Google Ads** (CSV siap upload). Destination
   (Dataset ID/Access Token/dst) dikelola langsung dari dashboard, bukan env var — siap multi-akun
   tanpa redeploy. Lihat [Export Layer](#export-layer-meta-capi--tiktok-events-api--google-ads).
@@ -185,7 +185,7 @@ Lalu cek di dashboard → Leads, harus muncul baris baru status "New Lead".
 
 ## Export Layer: Meta CAPI / TikTok Events API / Google Ads
 
-Menu **Export** di dashboard mengirim status Contact/Qualified Lead/Booking/Purchase sebagai event
+Menu **Export** di dashboard mengirim status Contact/Lead/InitiateCheckout/Purchase sebagai event
 konversi server-side ke platform iklan (Ebook Bagian 5) — inilah yang menutup loop "SINYAL": algoritma
 iklan belajar dari pelanggan sungguhan, bukan cuma klik.
 
@@ -228,7 +228,7 @@ Access Token statis seperti Meta/TikTok):
    **Basic access** ke Google (form di API Center, biasanya diproses beberapa hari).
 3. **Google Ads** → **Tools & Settings → Conversions** → buat Conversion Action baru (Import → Other
    data sources/CRM → Track conversions from clicks) untuk tiap status yang mau dilaporkan (Contact,
-   Qualified Lead, Booking, Purchase). Salin **resource name**-nya (`customers/.../conversionActions/...`,
+   Lead, InitiateCheckout, Purchase). Salin **resource name**-nya (`customers/.../conversionActions/...`,
    kelihatan di URL atau API response saat membuatnya).
 4. Di dashboard → **Export** → **Tambah Destination** → platform **Google Ads API** → isi Client ID,
    Client Secret, Developer Token, Customer ID (akun Ads tujuan, 10 digit tanpa strip), Login Customer ID
@@ -244,7 +244,7 @@ Access Token statis seperti Meta/TikTok):
 
 ## Yang BELUM termasuk di v1 ini
 
-- **Sinkronisasi Order/POS otomatis** (Bonus 02) — untuk sekarang, update status ke Booking/Purchase +
+- **Sinkronisasi Order/POS otomatis** (Bonus 02) — untuk sekarang, update status ke InitiateCheckout/Purchase +
   nilai transaksi dilakukan manual lewat halaman **Leads → Detail** di dashboard.
 
 Kabari saja kalau mau dibangun.

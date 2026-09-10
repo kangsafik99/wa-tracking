@@ -9,8 +9,8 @@ import type { ExportPlatform } from "@prisma/client";
 
 const STATUS_LABELS_FOR_GOOGLE: { key: string; label: string }[] = [
   { key: "CONTACT", label: "Contact" },
-  { key: "QUALIFIED_LEAD", label: "Qualified Lead" },
-  { key: "BOOKING", label: "Booking" },
+  { key: "QUALIFIED_LEAD", label: "Lead" },
+  { key: "BOOKING", label: "InitiateCheckout" },
   { key: "PURCHASE", label: "Purchase" },
 ];
 
